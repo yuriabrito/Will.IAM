@@ -20,6 +20,14 @@ var OwnershipLevels = struct {
 	Lender: "RL",
 }
 
+// Less returns true if o < oo; Lender < Owner
+func (o OwnershipLevel) Less(oo OwnershipLevel) bool {
+	if o == OwnershipLevels.Lender && oo == OwnershipLevels.Owner {
+		return true
+	}
+	return false
+}
+
 // Action is defined by IAM clients
 type Action string
 
@@ -47,14 +55,29 @@ type ResourceHierarchy struct {
 }
 
 // BuildResourceHierarchy from string
-func BuildResourceHierarchy(str string) ResourceHierarchy {
-	parts := strings.Split(str, "::")
+func BuildResourceHierarchy(parts []string) ResourceHierarchy {
 	open := false
 	size := len(parts)
-	if size == 1 {
+	if parts[len(parts)-1] == "*" {
 		open = true
 	}
 	return ResourceHierarchy{Open: open, Size: size, Hierarchy: parts}
+}
+
+// Contains checks whether rh.Hierarchy contains orh.Hierarchy
+func (rh ResourceHierarchy) Contains(orh ResourceHierarchy) bool {
+	if rh.Size > orh.Size {
+		return false
+	}
+	for i := range orh.Hierarchy {
+		if rh.Hierarchy[i] == "*" {
+			return true
+		}
+		if orh.Hierarchy[i] != rh.Hierarchy[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // Permission defines the onwership level of an action over a resource
@@ -96,7 +119,7 @@ func BuildPermission(str string) (Permission, error) {
 	ol := OwnershipLevel(parts[0])
 	action := BuildAction(parts[1])
 	service := BuildService(parts[2])
-	rh := BuildResourceHierarchy(parts[3])
+	rh := BuildResourceHierarchy(parts[3:])
 	return Permission{
 		OwnershipLevel:    ol,
 		Action:            action,
@@ -107,5 +130,14 @@ func BuildPermission(str string) (Permission, error) {
 
 // IsPresent checks if a permission is satisfied in a slice
 func (p Permission) IsPresent(permissions []Permission) bool {
+	for _, pp := range permissions {
+		if pp.Action != p.Action || pp.Service != p.Service ||
+			pp.OwnershipLevel.Less(p.OwnershipLevel) {
+			continue
+		}
+		if pp.ResourceHierarchy.Contains(p.ResourceHierarchy) {
+			return true
+		}
+	}
 	return false
 }
