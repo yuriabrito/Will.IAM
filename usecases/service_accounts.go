@@ -1,13 +1,14 @@
 package usecases
 
 import (
+	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/repositories"
 )
 
 // ServiceAccounts define entrypoints for ServiceAccount actions
 type ServiceAccounts interface {
 	Authenticate(string, string) error
-	HasPermission(string) bool
+	HasPermission(string, string) (bool, error)
 }
 
 type serviceAccounts struct {
@@ -34,6 +35,17 @@ func (u *serviceAccounts) Authenticate(id, token string) error {
 
 // HasPermission checks if user has the ownership level required to take an
 // action over a resource
-func (u serviceAccounts) HasPermission(permission string) bool {
-	return false
+func (u serviceAccounts) HasPermission(
+	serviceAccountID, permissionStr string,
+) (bool, error) {
+	permissions, err :=
+		u.permissionsRepository.ForServiceAccount(serviceAccountID)
+	if err != nil {
+		return false, err
+	}
+	permission, err := models.BuildPermission(permissionStr)
+	if err != nil {
+		return false, err
+	}
+	return permission.IsPresent(permissions), nil
 }

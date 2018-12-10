@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/ghostec/Will.IAM/usecases"
+	"github.com/gorilla/mux"
 )
 
 func serviceAccountsHasPermissionHandler(
@@ -16,10 +17,17 @@ func serviceAccountsHasPermissionHandler(
 			Write(w, http.StatusBadRequest, `{"error": "permission is required"}`)
 			return
 		}
-		if has := serviceAccountsUseCase.HasPermission(permissionSl[0]); has {
-			w.WriteHeader(http.StatusOK)
+		serviceAccountID := mux.Vars(r)["id"]
+		has, err :=
+			serviceAccountsUseCase.HasPermission(serviceAccountID, permissionSl[0])
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		w.WriteHeader(http.StatusForbidden)
+		if !has {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
 	}
 }
