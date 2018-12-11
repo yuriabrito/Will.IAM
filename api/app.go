@@ -85,8 +85,8 @@ func (a *App) GetRouter() *mux.Router {
 		repositories.NewHealthcheck(a.storage),
 	)).Methods("GET").Name("healthcheck")
 
-	serviceAccountsRepository := repositories.NewServiceAccounts()
-	rulesRepository := repositories.NewPermissions()
+	serviceAccountsRepository := repositories.NewServiceAccounts(a.storage)
+	rulesRepository := repositories.NewPermissions(a.storage)
 	serviceAccountsUseCase := usecases.NewServiceAccounts(serviceAccountsRepository, rulesRepository)
 
 	r.HandleFunc(

@@ -7,7 +7,9 @@ type Permissions interface {
 	ForServiceAccount(string) ([]models.Permission, error)
 }
 
-type permissions struct{}
+type permissions struct {
+	storage *Storage
+}
 
 func (p *permissions) ForServiceAccount(
 	id string,
@@ -16,6 +18,6 @@ func (p *permissions) ForServiceAccount(
 }
 
 // NewPermissions users ctor
-func NewPermissions() Permissions {
-	return &permissions{}
+func NewPermissions(s *Storage) Permissions {
+	return &permissions{storage: s}
 }

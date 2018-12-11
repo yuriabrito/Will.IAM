@@ -28,14 +28,14 @@ deps-test:
 	@until docker exec $(pg_dep) pg_isready; do echo 'Waiting Postgres...' && sleep 1; done
 	@docker exec $(pg_dep) createuser -s -U postgres $(project) 2>/dev/null || true
 	@docker exec $(pg_dep) createdb -U $(project) $(project_test) 2>/dev/null || true
-	# @migrate-test
+	@make migrate-test
 
 stop-deps:
 	@docker-compose down
 
 stop-deps-test:
-	# @drop-test
-	@stop-deps
+	@make drop-test
+	@make stop-deps
 
 build:
 	@mkdir -p bin && go build -o ./bin/$(project) .

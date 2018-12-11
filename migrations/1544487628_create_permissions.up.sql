@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS permissions (
+	id UUID PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4(),
+  ownership_level VARCHAR(10) NOT NULL,
+  action VARCHAR(200) NOT NULL,
+  service VARCHAR(200) NOT NULL,
+  resource_hierarchy VARCHAR(200) ARRAY,
+	created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+	updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);

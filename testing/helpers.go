@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/ghostec/Will.IAM/api"
+	"github.com/ghostec/Will.IAM/repositories"
 	"github.com/ghostec/Will.IAM/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -49,4 +50,15 @@ func DoRequest(
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)
 	return rec
+}
+
+// GetStorage returns a *repositories.Storage
+func GetStorage(t *testing.T) *repositories.Storage {
+	t.Helper()
+	s := repositories.NewStorage()
+	err := s.ConfigurePG(GetConfig(t))
+	if err != nil {
+		panic(err)
+	}
+	return s
 }

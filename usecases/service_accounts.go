@@ -7,6 +7,7 @@ import (
 
 // ServiceAccounts define entrypoints for ServiceAccount actions
 type ServiceAccounts interface {
+	Create(*models.ServiceAccount) error
 	Authenticate(string, string) error
 	HasPermission(string, string) (bool, error)
 }
@@ -26,6 +27,10 @@ func NewServiceAccounts(
 		serviceAccountsRepository: serviceAccountsRepository,
 		permissionsRepository:     permissionsRepository,
 	}
+}
+
+func (u serviceAccounts) Create(sa *models.ServiceAccount) error {
+	return u.serviceAccountsRepository.Create(sa)
 }
 
 // Authenticate verifies if token is valid for id, and sometimes refreshes it

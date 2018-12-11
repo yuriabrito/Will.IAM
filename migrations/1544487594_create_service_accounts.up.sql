@@ -1,0 +1,10 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+CREATE TABLE IF NOT EXISTS service_accounts (
+	id UUID PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4(),
+	key_id VARCHAR(200),
+	key_secret VARCHAR(200),
+	email VARCHAR(200),
+	created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+	updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);
