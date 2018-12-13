@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS service_accounts_roles (
+CREATE TABLE IF NOT EXISTS role_bindings (
 	id UUID PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4(),
 	service_account_id UUID,
 	role_id UUID,
@@ -8,6 +8,6 @@ CREATE TABLE IF NOT EXISTS service_accounts_roles (
   FOREIGN KEY(role_id) REFERENCES roles (id)
 );
 
-CREATE INDEX service_accounts_roles_service_account ON service_accounts_roles (service_account_id);
+CREATE INDEX role_bindings_service_account ON role_bindings (service_account_id);
 
-CREATE INDEX service_accounts_roles_role ON service_accounts_roles (role_id);
+CREATE INDEX role_bindings_role ON role_bindings (role_id);

@@ -24,8 +24,9 @@ func getServiceAccountsUseCase(t *testing.T) usecases.ServiceAccounts {
 	t.Helper()
 	storage := helpers.GetStorage(t)
 	saRepo := repositories.NewServiceAccounts(storage)
+	rRepo := repositories.NewRoles(storage)
 	pRepo := repositories.NewPermissions(storage)
-	return usecases.NewServiceAccounts(saRepo, pRepo)
+	return usecases.NewServiceAccounts(saRepo, rRepo, pRepo)
 }
 
 func TestServiceAccountsCreate(t *testing.T) {

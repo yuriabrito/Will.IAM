@@ -4,15 +4,15 @@ import "github.com/ghostec/Will.IAM/models"
 
 // Permissions repository
 type Permissions interface {
-	ForServiceAccount(string) ([]models.Permission, error)
+	ForRoles([]models.Role) ([]models.Permission, error)
 }
 
 type permissions struct {
 	storage *Storage
 }
 
-func (p *permissions) ForServiceAccount(
-	id string,
+func (p *permissions) ForRoles(
+	roles []models.Role,
 ) ([]models.Permission, error) {
 	return nil, nil
 }

@@ -80,12 +80,14 @@ func (rh ResourceHierarchy) Contains(orh ResourceHierarchy) bool {
 	return true
 }
 
-// Permission defines the onwership level of an action over a resource
+// Permission is bound to a role and
+// defines the onwership level of an action over a resource
 type Permission struct {
-	Service           Service
-	OwnershipLevel    OwnershipLevel
-	Action            Action
-	ResourceHierarchy ResourceHierarchy
+	RoleID            string            `json:"roleId" pg:"role_id"`
+	Service           Service           `json:"service" pg:"service"`
+	OwnershipLevel    OwnershipLevel    `json:"ownershipLevel" pg:"ownership_level"`
+	Action            Action            `json:"action" pg:"action"`
+	ResourceHierarchy ResourceHierarchy `json:"resourceHierarchy" pg:"resource_hierarchy"`
 }
 
 // ValidatePermission validates a permission in string format
