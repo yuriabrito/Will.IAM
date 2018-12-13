@@ -19,31 +19,31 @@ func TestValidatePermission(t *testing.T) {
 	}
 	tt := []testCase{
 		testCase{
-			str:   "RX::ListSchedulers::Maestro::*",
+			str:   "Maestro::RX::ListSchedulers::*",
 			valid: false,
 			err:   fmt.Errorf("OwnershipLevel needs to be RO or RL"),
 		},
 		testCase{
-			str:   "RO::ListSchedulers::Maestro::*",
+			str:   "Maestro::RO::ListSchedulers::*",
 			valid: true,
 			err:   nil,
 		},
 		testCase{
-			str:   "RL::ListSchedulers::Maestro::*",
+			str:   "Maestro::RL::ListSchedulers::*",
 			valid: true,
 			err:   nil,
 		},
 		testCase{
-			str:   "RO::ListSchedulers::Maestro::",
+			str:   "Maestro::RO::ListSchedulers::",
 			valid: false,
 			err:   fmt.Errorf("No parts can be empty"),
 		},
 		testCase{
-			str:   "RL::ListSchedulers::Maestro",
+			str:   "Maestro::RL::ListSchedulers",
 			valid: false,
 			err: fmt.Errorf(
 				"Incomplete permission. Expected format: " +
-					"OwnershipLevel::Action::Service::{ResourceHierarchy}",
+					"Service::OwnershipLevel::Action::{ResourceHierarchy}",
 			),
 		},
 	}
@@ -122,7 +122,7 @@ func TestBuildPermission(t *testing.T) {
 	}
 	tt := []testCase{
 		testCase{
-			str: "RO::ListSchedulers::Maestro::*",
+			str: "Maestro::RO::ListSchedulers::*",
 			permission: models.Permission{
 				OwnershipLevel: models.OwnershipLevels.Owner,
 				Action:         models.BuildAction("ListSchedulers"),
@@ -163,18 +163,18 @@ func TestHasPermission(t *testing.T) {
 	}
 
 	sniperPermissions := []string{
-		"RO::ListSchedulers::Maestro::Sniper3D::*",
-		"RO::ListSchedulers::Maestro::Sniper3D::sniper3d-game",
+		"Maestro::RO::ListSchedulers::Sniper3D::*",
+		"Maestro::RO::ListSchedulers::Sniper3D::sniper3d-game",
 	}
 
 	tt := []testCase{
 		testCase{
-			permission:  "RO::ListSchedulers::Maestro::Sniper3D::sniper3d-game",
+			permission:  "Maestro::RO::ListSchedulers::Sniper3D::sniper3d-game",
 			permissions: buildPermissions(sniperPermissions),
 			isPresent:   true,
 		},
 		testCase{
-			permission:  "RO::ListSchedulers::Maestro::WarMachines::*",
+			permission:  "Maestro::RO::ListSchedulers::WarMachines::*",
 			permissions: buildPermissions(sniperPermissions),
 			isPresent:   false,
 		},

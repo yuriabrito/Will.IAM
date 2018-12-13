@@ -82,9 +82,9 @@ func (rh ResourceHierarchy) Contains(orh ResourceHierarchy) bool {
 
 // Permission defines the onwership level of an action over a resource
 type Permission struct {
+	Service           Service
 	OwnershipLevel    OwnershipLevel
 	Action            Action
-	Service           Service
 	ResourceHierarchy ResourceHierarchy
 }
 
@@ -95,10 +95,10 @@ func ValidatePermission(str string) (bool, error) {
 	if len(parts) < 4 {
 		return false, fmt.Errorf(
 			"Incomplete permission. Expected format: " +
-				"OwnershipLevel::Action::Service::{ResourceHierarchy}",
+				"Service::OwnershipLevel::Action::{ResourceHierarchy}",
 		)
 	}
-	ol := OwnershipLevel(parts[0])
+	ol := OwnershipLevel(parts[1])
 	if ol != OwnershipLevels.Owner && ol != OwnershipLevels.Lender {
 		return false, fmt.Errorf("OwnershipLevel needs to be RO or RL")
 	}
@@ -116,14 +116,14 @@ func BuildPermission(str string) (Permission, error) {
 		return Permission{}, err
 	}
 	parts := strings.Split(str, "::")
-	ol := OwnershipLevel(parts[0])
-	action := BuildAction(parts[1])
-	service := BuildService(parts[2])
+	service := BuildService(parts[0])
+	ol := OwnershipLevel(parts[1])
+	action := BuildAction(parts[2])
 	rh := BuildResourceHierarchy(parts[3:])
 	return Permission{
+		Service:           service,
 		OwnershipLevel:    ol,
 		Action:            action,
-		Service:           service,
 		ResourceHierarchy: rh,
 	}, nil
 }

@@ -20,7 +20,7 @@ func TestHasPermission(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 		},
 		hasPermissionTest{
-			request:        "/service_accounts/1234/permissions?permission=RL::TestAction::Service::*",
+			request:        "/service_accounts/1234/permissions?permission=Service::RL::TestAction::*",
 			expectedStatus: http.StatusForbidden,
 		},
 	}
