@@ -35,8 +35,16 @@ func (rs roles) Create(r *models.Role) error {
 	return err
 }
 
-func (rs roles) Bind(models.Role, models.ServiceAccount) error {
-	return nil
+func (rs roles) Bind(r models.Role, sa models.ServiceAccount) error {
+	rb := &models.RoleBinding{
+		RoleID:           r.ID,
+		ServiceAccountID: sa.ID,
+	}
+	_, err := rs.storage.PG.DB.Exec(
+		`INSERT INTO role_bindings (role_id, service_account_id)
+		VALUES (?role_id, ?service_account_id)`, rb,
+	)
+	return err
 }
 
 // NewRoles roles ctor

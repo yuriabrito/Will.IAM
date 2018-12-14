@@ -1,6 +1,8 @@
 package usecases
 
 import (
+	"fmt"
+
 	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/repositories"
 )
@@ -11,6 +13,7 @@ type ServiceAccounts interface {
 	Authenticate(string, string) error
 	HasPermission(string, string) (bool, error)
 	GetPermissions(string) ([]models.Permission, error)
+	GetRoles(string) ([]models.Role, error)
 }
 
 type serviceAccounts struct {
@@ -34,7 +37,30 @@ func NewServiceAccounts(
 
 func (sas serviceAccounts) Create(sa *models.ServiceAccount) error {
 	// TODO: pass tx to repo create -> service_accounts + roles + role_bindings
-	return sas.serviceAccountsRepository.Create(sa)
+	if err := sas.serviceAccountsRepository.Create(sa); err != nil {
+		return err
+	}
+	r := &models.Role{
+		Name: fmt.Sprintf("service-account:%s", sa.ID),
+	}
+	if err := sas.rolesRepository.Create(r); err != nil {
+		return err
+	}
+	if err := sas.rolesRepository.Bind(*r, *sa); err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetRoles returns all roles to which the serviceAccountID is bound to
+func (sas serviceAccounts) GetRoles(
+	serviceAccountID string,
+) ([]models.Role, error) {
+	roles, err := sas.rolesRepository.ForServiceAccountID(serviceAccountID)
+	if err != nil {
+		return nil, err
+	}
+	return roles, nil
 }
 
 // Authenticate verifies if token is valid for id, and sometimes refreshes it
