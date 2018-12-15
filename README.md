@@ -32,6 +32,10 @@ You'll know more about Will.IAM permissions later. If someone has **Maestro::RL:
 
 Every permission has three components:
 
+### Service
+
+A naming reference to any application service account that uses Will.IAM as IAM solution.
+
 ### Ownership Level
 
 **ResourceOwner**: Can exercise the action over the resource and provide the exact
