@@ -30,7 +30,7 @@ You'll know more about Will.IAM permissions later. If someone has **Maestro::RL:
 
 ## Permissions
 
-Every permission has three components:
+Every permission has four components:
 
 ### Service
 
