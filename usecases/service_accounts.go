@@ -87,8 +87,6 @@ func (sas serviceAccounts) HasPermission(
 func (sas serviceAccounts) GetPermissions(
 	serviceAccountID string,
 ) ([]models.Permission, error) {
-	// get role bindings for SA
-	// get roles permissions
 	roles, err := sas.rolesRepository.ForServiceAccountID(serviceAccountID)
 	if err != nil {
 		return nil, err

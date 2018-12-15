@@ -51,7 +51,7 @@ func BuildService(str string) Service {
 type ResourceHierarchy struct {
 	Open      bool
 	Size      int
-	Hierarchy []string
+	Hierarchy []string `json:"resourceHierarchy" pg:"resource_hierarchy,array"`
 }
 
 // BuildResourceHierarchy from string
@@ -80,14 +80,20 @@ func (rh ResourceHierarchy) Contains(orh ResourceHierarchy) bool {
 	return true
 }
 
+// ToString will join the Hierarchy slice to return a
+// resource hierarchy in the format {1}::{2}...
+func (rh ResourceHierarchy) ToString() string {
+	return strings.Join(rh.Hierarchy, "::")
+}
+
 // Permission is bound to a role and
 // defines the onwership level of an action over a resource
 type Permission struct {
-	RoleID            string            `json:"roleId" pg:"role_id"`
-	Service           Service           `json:"service" pg:"service"`
-	OwnershipLevel    OwnershipLevel    `json:"ownershipLevel" pg:"ownership_level"`
-	Action            Action            `json:"action" pg:"action"`
-	ResourceHierarchy ResourceHierarchy `json:"resourceHierarchy" pg:"resource_hierarchy"`
+	RoleID            string         `json:"roleId" pg:"role_id"`
+	Service           Service        `json:"service" pg:"service"`
+	OwnershipLevel    OwnershipLevel `json:"ownershipLevel" pg:"ownership_level"`
+	Action            Action         `json:"action" pg:"action"`
+	ResourceHierarchy ResourceHierarchy
 }
 
 // ValidatePermission validates a permission in string format
@@ -142,4 +148,12 @@ func (p Permission) IsPresent(permissions []Permission) bool {
 		}
 	}
 	return false
+}
+
+// ToString converts a permission to it's equivalent string format
+func (p Permission) ToString() string {
+	return fmt.Sprintf(
+		"%s::%s::%s::%s", p.Service, p.OwnershipLevel, p.Action,
+		strings.Join(p.ResourceHierarchy.Hierarchy, "::"),
+	)
 }
