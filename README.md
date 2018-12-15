@@ -18,15 +18,15 @@ Using Maestro, https://github.com/topfreegames/maestro, as an example:
 
 In order to get a list of schedulers, users must have ListSchedulers permission.
 
-Permissions are written in a specific format **{OwnershipLevel}::{Action}::{Service}::{Resource::Hierarchy}**. So, ListSchedulers could be had in a diversity of ways:
+Permissions are written in a specific format **{Service}::{OwnershipLevel}::{Action}::{Resource::Hierarchy}**. So, ListSchedulers could be had in a diversity of ways:
 
-RO::ListSchedulers::Maestro::*
+Maestro::RO::ListSchedulers::*
 
-RL::ListSchedulers::Maestro::NA::Sniper3D::*
+Maestro::RL::ListSchedulers::NA::Sniper3D::*
 
-RL::ListSchedulers::Maestro::NA::Sniper3D::sniper3d-game
+Maestro::RL::ListSchedulers::NA::Sniper3D::sniper3d-game
 
-You'll know more about Will.IAM permissions later. If someone has **RL::ListSchedulers::Maestro::NA::Sniper3D::\***, then Maestro will only respond schedulers under NA::Sniper3D's domain.
+You'll know more about Will.IAM permissions later. If someone has **Maestro::RL::ListSchedulers::NA::Sniper3D::\***, then Maestro will only respond schedulers under NA::Sniper3D's domain.
 
 ## Permissions
 
@@ -66,6 +66,6 @@ To a requester with full access over the client, this means it will list all pos
 
 ## Permission dependency
 
-A nice-to-have feature would be to declare permission dependencies. It should be expected that **RL::EditScheduler::Maestro::\*** implies following **RL::ReadScheduler::Maestro::\***
+A nice-to-have feature would be to declare permission dependencies. It should be expected that **Maestro::RL::EditScheduler::\*** implies following **Maestro::RL::ReadScheduler::\***
 
 One way to do this is to have clients declare them over a Will.IAM endpoint and use this custom entity, PermissionDependency, when creating / deleting user|role permissions.
