@@ -1,7 +1,9 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/ghostec/Will.IAM/oauth2"
 )
@@ -23,9 +25,17 @@ func authenticationHandler(
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
-		// TODO: ExchangeCode
+		code := qs["code"][0]
+		authResult, err := provider.ExchangeCode(code)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 		if len(qs["state"]) != 0 {
-			redirectTo := qs["state"][0]
+			v := url.Values{}
+			v.Add("access_token", authResult.AccessToken)
+			v.Add("email", authResult.Email)
+			redirectTo := fmt.Sprintf("%s?%s", qs["state"][0], v.Encode())
 			http.Redirect(w, r, redirectTo, http.StatusSeeOther)
 			return
 		}

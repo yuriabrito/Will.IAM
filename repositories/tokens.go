@@ -25,7 +25,7 @@ func (ts tokens) Get(accessToken string) (*models.Token, error) {
 func (ts tokens) Save(token *models.Token) error {
 	_, err := ts.storage.PG.DB.Exec(`INSERT INTO tokens (access_token, refresh_token,
 	token_type, expiry, email, updated_at) VALUES (?access_token, ?refresh_token,
-	?token_type, ?expiry, ?email, now())`)
+	?token_type, ?expiry, ?email, now())`, token)
 	return err
 }
 

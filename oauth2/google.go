@@ -1,13 +1,13 @@
 package oauth2
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/repositories"
@@ -64,19 +64,14 @@ func (g *Google) BuildAuthURL(state string) string {
 	return buildURL("https://accounts.google.com/o/oauth2/v2/auth", qs)
 }
 
-func (g *Google) buildExchangeCodeForm(code string) ([]byte, error) {
-	ecf := map[string]string{
-		"code":          code,
-		"client_id":     g.config.ClientID,
-		"client_secret": g.config.ClientSecret,
-		"redirect_uri":  g.config.RedirectURL,
-		"grant_type":    "authorization_code",
-	}
-	bts, err := json.Marshal(ecf)
-	if err != nil {
-		return nil, err
-	}
-	return bts, nil
+func (g *Google) buildExchangeCodeForm(code string) string {
+	v := url.Values{}
+	v.Add("code", code)
+	v.Add("client_id", g.config.ClientID)
+	v.Add("client_secret", g.config.ClientSecret)
+	v.Add("redirect_uri", g.config.RedirectURL)
+	v.Add("grant_type", "authorization_code")
+	return v.Encode()
 }
 
 // ExchangeCode will trade code for full token with Google
@@ -95,6 +90,7 @@ func (g *Google) ExchangeCode(code string) (*AuthResult, error) {
 			"email from non-allowed hosted domain %s", userInfo.HostedDomain,
 		)
 	}
+	t.Email = userInfo.Email
 	if err := g.tokensRepository.Save(t); err != nil {
 		return nil, err
 	}
@@ -105,11 +101,9 @@ func (g *Google) ExchangeCode(code string) (*AuthResult, error) {
 }
 
 func (g *Google) tokenFromCode(code string) (*models.Token, error) {
-	ecf, err := g.buildExchangeCodeForm(code)
-	if err != nil {
-		return nil, err
-	}
-	req, err := http.NewRequest("POST", tokenEndpoint, bytes.NewBuffer(ecf))
+	ecf := g.buildExchangeCodeForm(code)
+	req, err := http.NewRequest("POST", tokenEndpoint, strings.NewReader(ecf))
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	if err != nil {
 		return nil, err
 	}
@@ -119,12 +113,19 @@ func (g *Google) tokenFromCode(code string) (*models.Token, error) {
 	}
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
-	t := &models.Token{}
-	err = json.Unmarshal(body, t)
+	tmap := map[string]interface{}{}
+	err = json.Unmarshal(body, &tmap)
 	if err != nil {
 		return nil, err
 	}
-	return t, nil
+	return &models.Token{
+		AccessToken:  tmap["access_token"].(string),
+		RefreshToken: tmap["refresh_token"].(string),
+		TokenType:    tmap["token_type"].(string),
+		Expiry: time.Now().Add(
+			time.Second * time.Duration(tmap["expires_in"].(float64)),
+		),
+	}, nil
 }
 
 type userInfo struct {

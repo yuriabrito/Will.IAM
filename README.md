@@ -8,6 +8,7 @@ Desired features:
 * [ ] RBAC authorization
   Permissions+Roles+/am
 * [ ] SSO - Single Sign-On
+  * [ ] SSO browser handler should save/get to/from localStorage and redirect to requester
   Client redirects to server (browser), server has token in localStorage, redirects back with stored token. No button clicks :) Client should be careful to not log token to other parties (e.g google analytics)
 
 ## About RBAC use cases and implementation
