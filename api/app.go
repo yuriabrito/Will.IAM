@@ -113,6 +113,18 @@ func (a *App) GetRouter() *mux.Router {
 	).
 		Methods("GET").Name("authenticationBuildURLHandler")
 
+	r.HandleFunc(
+		"/authentication",
+		authenticationHandler(google),
+	).
+		Methods("GET").Name("authenticationBuildURLHandler")
+
+	r.HandleFunc(
+		"/authentication/sso_test",
+		authenticationSSOTestHandler(),
+	).
+		Methods("GET").Name("authenticationBuildURLHandler")
+
 	return r
 }
 
