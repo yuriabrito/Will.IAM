@@ -8,7 +8,7 @@ type AuthResult struct {
 
 // Provider is the contract any OAuth2 implementation must follow
 type Provider interface {
-	BuildAuthURL() string
+	BuildAuthURL(string) string
 	ExchangeCode(string) (*AuthResult, error)
 	Authenticate(string) (*AuthResult, error)
 }

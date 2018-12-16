@@ -24,7 +24,7 @@ func getConfig(path, envPrefix, configType string) (*viper.Viper, error) {
 
 // GetConfig reads config from and returns it as viper config
 func GetConfig(path string) (*viper.Viper, error) {
-	config, err := getConfig(path, "Will.IAM", "yaml")
+	config, err := getConfig(path, "WILLIAM", "yaml")
 	if err != nil {
 		return nil, err
 	}

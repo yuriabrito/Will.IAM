@@ -1,0 +1,8 @@
+oauth2:
+  google:
+    clientId: dummy
+    clientSecret: dummy
+    redirectUrl: dummy
+    hostedDomains:
+      - domain1
+      - domain2

@@ -22,7 +22,6 @@ type GoogleConfig struct {
 	ClientID      string
 	ClientSecret  string
 	RedirectURL   string
-	Endpoint      string
 	HostedDomains []string
 }
 
@@ -62,7 +61,7 @@ func (g *Google) BuildAuthURL(state string) string {
 		"response_type":          "code",
 		"prompt":                 "consent",
 	})
-	return buildURL(g.config.Endpoint, qs)
+	return buildURL("https://accounts.google.com/o/oauth2/v2/auth", qs)
 }
 
 func (g *Google) buildExchangeCodeForm(code string) ([]byte, error) {

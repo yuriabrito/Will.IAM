@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/ghostec/Will.IAM/constants"
+	"github.com/ghostec/Will.IAM/oauth2"
 	"github.com/ghostec/Will.IAM/repositories"
 	"github.com/ghostec/Will.IAM/usecases"
 	"github.com/gorilla/mux"
@@ -97,6 +98,20 @@ func (a *App) GetRouter() *mux.Router {
 		serviceAccountsHasPermissionHandler(serviceAccountsUseCase),
 	).
 		Methods("GET").Name("serviceAccountsHasPermission")
+
+	tokensRepo := repositories.NewTokens(a.storage)
+	google := oauth2.NewGoogle(oauth2.GoogleConfig{
+		ClientID:      a.config.GetString("oauth2.google.clientId"),
+		ClientSecret:  a.config.GetString("oauth2.google.clientSecret"),
+		RedirectURL:   a.config.GetString("oauth2.google.redirectUrl"),
+		HostedDomains: a.config.GetStringSlice("oauth2.google.hostedDomains"),
+	}, tokensRepo)
+
+	r.HandleFunc(
+		"/authentication/build_url",
+		authenticationBuildURLHandler(google),
+	).
+		Methods("GET").Name("authenticationBuildURLHandler")
 
 	return r
 }
