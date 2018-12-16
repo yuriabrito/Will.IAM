@@ -8,17 +8,28 @@ type Tokens interface {
 	Save(*models.Token) error
 }
 
-type tokens struct{}
-
-func (t tokens) Get(accessToken string) (*models.Token, error) {
-	return nil, nil
+type tokens struct {
+	storage *Storage
 }
 
-func (t tokens) Save(token *models.Token) error {
-	return nil
+func (ts tokens) Get(accessToken string) (*models.Token, error) {
+	t := &models.Token{}
+	if _, err := ts.storage.PG.DB.Query(
+		t, "SELECT * FROM tokens WHERE access_token = ?", accessToken,
+	); err != nil {
+		return nil, err
+	}
+	return t, nil
+}
+
+func (ts tokens) Save(token *models.Token) error {
+	_, err := ts.storage.PG.DB.Exec(`INSERT INTO tokens (access_token, refresh_token,
+	token_type, expiry, email) VALUES (?access_token, ?refresh_token,
+	?token_type, ?expiry, ?email)`)
+	return err
 }
 
 // NewTokens ctor
-func NewTokens() Tokens {
-	return &tokens{}
+func NewTokens(storage *Storage) Tokens {
+	return &tokens{storage: storage}
 }

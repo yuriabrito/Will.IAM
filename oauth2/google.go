@@ -80,7 +80,7 @@ func (g *Google) buildExchangeCodeForm(code string) ([]byte, error) {
 	return bts, nil
 }
 
-// ExchangeCode lorem ipsum
+// ExchangeCode will trade code for full token with Google
 func (g *Google) ExchangeCode(code string) (*AuthResult, error) {
 	t, err := g.tokenFromCode(code)
 	if err != nil {
@@ -163,6 +163,26 @@ func (g *Google) checkHostedDomain(hd string) bool {
 		}
 	}
 	return false
+}
+
+// Authenticate verifies if an accessToken is valid and maybe refresh it
+func (g *Google) Authenticate(accessToken string) (*AuthResult, error) {
+	t, err := g.tokensRepository.Get(accessToken)
+	if t == nil {
+		return nil, fmt.Errorf("access token not found")
+	}
+	if err != nil {
+		return nil, err
+	}
+	_, err = g.getUserInfo(t.AccessToken)
+	if err != nil {
+		return nil, err
+	}
+	// TODO: handle refresh
+	return &AuthResult{
+		AccessToken: t.AccessToken,
+		Email:       t.Email,
+	}, nil
 }
 
 // NewGoogle ctor
