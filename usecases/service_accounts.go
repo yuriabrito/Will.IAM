@@ -4,13 +4,15 @@ import (
 	"fmt"
 
 	"github.com/ghostec/Will.IAM/models"
+	"github.com/ghostec/Will.IAM/oauth2"
 	"github.com/ghostec/Will.IAM/repositories"
 )
 
 // ServiceAccounts define entrypoints for ServiceAccount actions
 type ServiceAccounts interface {
 	Create(*models.ServiceAccount) error
-	Authenticate(string, string) error
+	AuthenticateAccessToken(string) (*AccessTokenAuth, error)
+	AuthenticateKeyPair(string, string) (string, error)
 	HasPermission(string, string) (bool, error)
 	GetPermissions(string) ([]models.Permission, error)
 	GetRoles(string) ([]models.Role, error)
@@ -20,6 +22,7 @@ type serviceAccounts struct {
 	serviceAccountsRepository repositories.ServiceAccounts
 	rolesRepository           repositories.Roles
 	permissionsRepository     repositories.Permissions
+	oauth2Provider            oauth2.Provider
 }
 
 // NewServiceAccounts serviceAccounts ctor
@@ -27,11 +30,13 @@ func NewServiceAccounts(
 	serviceAccountsRepository repositories.ServiceAccounts,
 	rolesRepository repositories.Roles,
 	permissionsRepository repositories.Permissions,
+	provider oauth2.Provider,
 ) ServiceAccounts {
 	return &serviceAccounts{
 		serviceAccountsRepository: serviceAccountsRepository,
 		rolesRepository:           rolesRepository,
 		permissionsRepository:     permissionsRepository,
+		oauth2Provider:            provider,
 	}
 }
 
@@ -63,9 +68,40 @@ func (sas serviceAccounts) GetRoles(
 	return roles, nil
 }
 
-// Authenticate verifies if token is valid for id, and sometimes refreshes it
-func (sas *serviceAccounts) Authenticate(id, token string) error {
-	return nil
+// AccessTokenAuth stores a ServiceAccountID and the (maybe refreshed)
+// AccessToken
+type AccessTokenAuth struct {
+	ServiceAccountID string
+	AccessToken      string
+}
+
+// AuthenticateAccessToken verifies if token is valid for email, and sometimes refreshes it
+func (sas *serviceAccounts) AuthenticateAccessToken(
+	accessToken string,
+) (*AccessTokenAuth, error) {
+	authResult, err := sas.oauth2Provider.Authenticate(accessToken)
+	if err != nil {
+		return nil, err
+	}
+	sa, err := sas.serviceAccountsRepository.ForEmail(authResult.Email)
+	if err != nil {
+		return nil, err
+	}
+	return &AccessTokenAuth{
+		ServiceAccountID: sa.ID,
+		AccessToken:      authResult.AccessToken,
+	}, nil
+}
+
+// AuthenticateKeyPair verifies if key pair is valid
+func (sas *serviceAccounts) AuthenticateKeyPair(
+	keyID, keySecret string,
+) (string, error) {
+	sa, err := sas.serviceAccountsRepository.ForKeyPair(keyID, keySecret)
+	if err != nil {
+		return "", err
+	}
+	return sa.ID, nil
 }
 
 // HasPermission checks if user has the ownership level required to take an

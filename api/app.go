@@ -86,19 +86,6 @@ func (a *App) GetRouter() *mux.Router {
 		repositories.NewHealthcheck(a.storage),
 	)).Methods("GET").Name("healthcheck")
 
-	serviceAccountsRepo := repositories.NewServiceAccounts(a.storage)
-	rolesRepo := repositories.NewRoles(a.storage)
-	permissionsRepo := repositories.NewPermissions(a.storage)
-	serviceAccountsUseCase := usecases.NewServiceAccounts(
-		serviceAccountsRepo, rolesRepo, permissionsRepo,
-	)
-
-	r.HandleFunc(
-		"/service_accounts/{id}/permissions",
-		serviceAccountsHasPermissionHandler(serviceAccountsUseCase),
-	).
-		Methods("GET").Name("serviceAccountsHasPermission")
-
 	tokensRepo := repositories.NewTokens(a.storage)
 	google := oauth2.NewGoogle(oauth2.GoogleConfig{
 		ClientID:      a.config.GetString("oauth2.google.clientId"),
@@ -106,6 +93,19 @@ func (a *App) GetRouter() *mux.Router {
 		RedirectURL:   a.config.GetString("oauth2.google.redirectUrl"),
 		HostedDomains: a.config.GetStringSlice("oauth2.google.hostedDomains"),
 	}, tokensRepo)
+
+	serviceAccountsRepo := repositories.NewServiceAccounts(a.storage)
+	rolesRepo := repositories.NewRoles(a.storage)
+	permissionsRepo := repositories.NewPermissions(a.storage)
+	serviceAccountsUseCase := usecases.NewServiceAccounts(
+		serviceAccountsRepo, rolesRepo, permissionsRepo, google,
+	)
+
+	r.HandleFunc(
+		"/service_accounts/{id}/permissions",
+		serviceAccountsHasPermissionHandler(serviceAccountsUseCase),
+	).
+		Methods("GET").Name("serviceAccountsHasPermission")
 
 	r.HandleFunc(
 		"/authentication/build_url",

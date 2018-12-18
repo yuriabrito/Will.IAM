@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/ghostec/Will.IAM/models"
+	"github.com/ghostec/Will.IAM/oauth2"
 	"github.com/ghostec/Will.IAM/repositories"
 	helpers "github.com/ghostec/Will.IAM/testing"
 	"github.com/ghostec/Will.IAM/usecases"
@@ -27,7 +28,8 @@ func getServiceAccountsUseCase(t *testing.T) usecases.ServiceAccounts {
 	saRepo := repositories.NewServiceAccounts(storage)
 	rRepo := repositories.NewRoles(storage)
 	pRepo := repositories.NewPermissions(storage)
-	return usecases.NewServiceAccounts(saRepo, rRepo, pRepo)
+	providerBlankMock := oauth2.NewProviderBlankMock()
+	return usecases.NewServiceAccounts(saRepo, rRepo, pRepo, providerBlankMock)
 }
 
 func TestServiceAccountsCreate(t *testing.T) {
