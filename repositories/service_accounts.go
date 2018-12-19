@@ -19,7 +19,17 @@ type serviceAccounts struct {
 }
 
 func (sas serviceAccounts) Get(id string) (*models.ServiceAccount, error) {
-	return nil, nil
+	sa := &models.ServiceAccount{}
+	if _, err := sas.storage.PG.DB.Query(
+		&sa,
+		`SELECT id, name, key_id, key_secret, email, base_role_id
+		FROM service_accounts
+		WHERE id = ?`,
+		id,
+	); err != nil {
+		return nil, err
+	}
+	return sa, nil
 }
 
 // ForEmail retrieves Service Account corresponding
@@ -28,7 +38,7 @@ func (sas serviceAccounts) ForEmail(
 ) (*models.ServiceAccount, error) {
 	sa := &models.ServiceAccount{}
 	if _, err := sas.storage.PG.DB.Query(
-		sa, `SELECT id, name, key_id, key_secret, email
+		sa, `SELECT id, name, key_id, key_secret, email, base_role_id
 		FROM service_accounts WHERE email = ? LIMIT 1`, email,
 	); err != nil {
 		return nil, err
@@ -45,7 +55,7 @@ func (sas serviceAccounts) ForKeyPair(
 ) (*models.ServiceAccount, error) {
 	sa := &models.ServiceAccount{}
 	if _, err := sas.storage.PG.DB.Query(
-		&sa, `SELECT id, name, key_id, key_secret, email
+		&sa, `SELECT id, name, key_id, key_secret, email, base_role_id
 		FROM service_accounts WHERE key_id = ? AND key_secret`, keyID, keySecret,
 	); err != nil {
 		return nil, err
@@ -55,7 +65,8 @@ func (sas serviceAccounts) ForKeyPair(
 
 func (sas serviceAccounts) Create(sa *models.ServiceAccount) error {
 	_, err := sas.storage.PG.DB.Query(
-		sa, "INSERT INTO service_accounts (name, email) VALUES (?name, ?email) RETURNING id", sa,
+		sa, `INSERT INTO service_accounts (id, name, email, base_role_id)
+		VALUES (?id, ?name, ?email, ?base_role_id) RETURNING id`, sa,
 	)
 	return err
 }

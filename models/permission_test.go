@@ -5,7 +5,6 @@ package models_test
 import (
 	"fmt"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/ghostec/Will.IAM/models"
@@ -62,58 +61,6 @@ func TestValidatePermission(t *testing.T) {
 	}
 }
 
-func TestBuildResourceHierarchy(t *testing.T) {
-	type testCase struct {
-		str       string
-		open      bool
-		size      int
-		hierarchy []string
-	}
-	tt := []testCase{
-		testCase{
-			str:       "*",
-			open:      true,
-			size:      1,
-			hierarchy: []string{"*"},
-		},
-		testCase{
-			str:       "SomeGame::*",
-			open:      true,
-			size:      2,
-			hierarchy: []string{"SomeGame", "*"},
-		},
-		testCase{
-			str:       "SomeGame::some-sub-resource",
-			open:      false,
-			size:      2,
-			hierarchy: []string{"SomeGame", "some-sub-resource"},
-		},
-	}
-
-	for _, tt := range tt {
-		rh := models.BuildResourceHierarchy(strings.Split(tt.str, "::"))
-		if rh.Open != tt.open {
-			t.Errorf("Expected Open to be %t. Got %t", tt.open, rh.Open)
-		}
-		if rh.Size != tt.size {
-			t.Errorf("Expected Size to be %d. Got %d", tt.size, rh.Size)
-		}
-		if len(rh.Hierarchy) != len(tt.hierarchy) {
-			t.Errorf(
-				"Expected Hierarchy to be %#v. Got %#v", tt.hierarchy, rh.Hierarchy,
-			)
-		}
-		for i := range rh.Hierarchy {
-			if rh.Hierarchy[i] != tt.hierarchy[i] {
-				t.Errorf(
-					"Expected Hierarchy[%d] to be %s. Got %s",
-					i, tt.hierarchy[i], rh.Hierarchy[i],
-				)
-			}
-		}
-	}
-}
-
 func TestBuildPermission(t *testing.T) {
 	type testCase struct {
 		str        string
@@ -124,14 +71,10 @@ func TestBuildPermission(t *testing.T) {
 		testCase{
 			str: "Maestro::RO::ListSchedulers::*",
 			permission: models.Permission{
-				OwnershipLevel: models.OwnershipLevels.Owner,
-				Action:         models.BuildAction("ListSchedulers"),
-				Service:        "Maestro",
-				ResourceHierarchy: models.ResourceHierarchy{
-					Open:      true,
-					Size:      1,
-					Hierarchy: []string{"*"},
-				},
+				OwnershipLevel:    models.OwnershipLevels.Owner,
+				Action:            models.BuildAction("ListSchedulers"),
+				Service:           "Maestro",
+				ResourceHierarchy: models.ResourceHierarchy("*"),
 			},
 			err: nil,
 		},

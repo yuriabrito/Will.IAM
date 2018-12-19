@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS service_accounts (
 	key_id VARCHAR(200),
 	key_secret VARCHAR(200),
 	email VARCHAR(200),
+  base_role_id UUID NOT NULL,
 	created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
 	updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );

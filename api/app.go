@@ -136,7 +136,7 @@ func (a *App) GetRouter() *mux.Router {
 		Methods("GET").Name("authenticationBuildURLHandler")
 
 	servicesRepo := repositories.NewServices(a.storage)
-	servicesUseCase := usecases.NewServices(servicesRepo)
+	servicesUseCase := usecases.NewServices(servicesRepo, serviceAccountsUseCase)
 	authMiddle := authMiddleware(serviceAccountsUseCase)
 
 	r.Handle(

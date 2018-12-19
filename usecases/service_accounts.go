@@ -6,6 +6,7 @@ import (
 	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/oauth2"
 	"github.com/ghostec/Will.IAM/repositories"
+	"github.com/gofrs/uuid"
 )
 
 // ServiceAccounts define entrypoints for ServiceAccount actions
@@ -15,6 +16,7 @@ type ServiceAccounts interface {
 	AuthenticateKeyPair(string, string) (string, error)
 	HasPermission(string, string) (bool, error)
 	GetPermissions(string) ([]models.Permission, error)
+	CreatePermission(string, models.Permission) error
 	GetRoles(string) ([]models.Role, error)
 }
 
@@ -42,13 +44,15 @@ func NewServiceAccounts(
 
 func (sas serviceAccounts) Create(sa *models.ServiceAccount) error {
 	// TODO: pass tx to repo create -> service_accounts + roles + role_bindings
-	if err := sas.serviceAccountsRepository.Create(sa); err != nil {
-		return err
-	}
+	sa.ID = uuid.Must(uuid.NewV4()).String()
 	r := &models.Role{
 		Name: fmt.Sprintf("service-account:%s", sa.ID),
 	}
 	if err := sas.rolesRepository.Create(r); err != nil {
+		return err
+	}
+	sa.BaseRoleID = r.ID
+	if err := sas.serviceAccountsRepository.Create(sa); err != nil {
 		return err
 	}
 	if err := sas.rolesRepository.Bind(*r, *sa); err != nil {
@@ -132,4 +136,18 @@ func (sas serviceAccounts) GetPermissions(
 		return nil, err
 	}
 	return permissions, nil
+}
+
+func (sas serviceAccounts) CreatePermission(
+	serviceAccountID string, permission models.Permission,
+) error {
+	sa, err := sas.serviceAccountsRepository.Get(serviceAccountID)
+	if err != nil {
+		return err
+	}
+	permission.RoleID = sa.BaseRoleID
+	if err := sas.permissionsRepository.Create(permission); err != nil {
+		return err
+	}
+	return nil
 }

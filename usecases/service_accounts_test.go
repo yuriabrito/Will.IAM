@@ -11,6 +11,7 @@ import (
 	"github.com/ghostec/Will.IAM/repositories"
 	helpers "github.com/ghostec/Will.IAM/testing"
 	"github.com/ghostec/Will.IAM/usecases"
+	"github.com/gofrs/uuid"
 )
 
 func beforeEachServiceAccounts(t *testing.T) {
@@ -36,8 +37,9 @@ func TestServiceAccountsCreate(t *testing.T) {
 	beforeEachServiceAccounts(t)
 	saUC := getServiceAccountsUseCase(t)
 	saM := &models.ServiceAccount{
-		Name:  "some name",
-		Email: "test@domain.com",
+		Name:       "some name",
+		Email:      "test@domain.com",
+		BaseRoleID: uuid.Must(uuid.NewV4()).String(),
 	}
 	if err := saUC.Create(saM); err != nil {
 		t.Errorf("Unexpected error: %s", err.Error())
@@ -51,8 +53,9 @@ func TestServiceAccountsCreateShouldCreateRoleAndRoleBinding(t *testing.T) {
 	beforeEachServiceAccounts(t)
 	saUC := getServiceAccountsUseCase(t)
 	saM := &models.ServiceAccount{
-		Name:  "some name",
-		Email: "test@domain.com",
+		Name:       "some name",
+		Email:      "test@domain.com",
+		BaseRoleID: uuid.Must(uuid.NewV4()).String(),
 	}
 	if err := saUC.Create(saM); err != nil {
 		t.Errorf("Unexpected error: %s", err.Error())

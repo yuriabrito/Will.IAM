@@ -36,56 +36,59 @@ func BuildAction(str string) Action {
 	return Action(str)
 }
 
+// All checks if action matches any
+func (a Action) All() bool {
+	return string(a) == "*"
+}
+
 // ResourceHierarchy is either a complete or an open hierarchy to something
 // Eg:
 // Complete: maestro::sniper-3d::na::sniper3d-red
 // Open: maestro::sniper-3d::stag::*
-type ResourceHierarchy struct {
-	Open      bool
-	Size      int
-	Hierarchy []string `json:"resourceHierarchy" pg:"resource_hierarchy,array"`
+type ResourceHierarchy string
+
+// All checks if rh matches any
+func (rh ResourceHierarchy) All() bool {
+	return string(rh) == "*"
 }
 
-// BuildResourceHierarchy from string
-func BuildResourceHierarchy(parts []string) ResourceHierarchy {
-	open := false
+type resourceHierarchy struct {
+	size      int
+	hierarchy []string
+}
+
+func buildResourceHierarchy(rh ResourceHierarchy) resourceHierarchy {
+	parts := strings.Split(string(rh), "::")
 	size := len(parts)
-	if parts[len(parts)-1] == "*" {
-		open = true
-	}
-	return ResourceHierarchy{Open: open, Size: size, Hierarchy: parts}
+	return resourceHierarchy{size: size, hierarchy: parts}
 }
 
 // Contains checks whether rh.Hierarchy contains orh.Hierarchy
 func (rh ResourceHierarchy) Contains(orh ResourceHierarchy) bool {
-	if rh.Size > orh.Size {
+	rhh := buildResourceHierarchy(rh)
+	orhh := buildResourceHierarchy(orh)
+	if rhh.size > orhh.size {
 		return false
 	}
-	for i := range orh.Hierarchy {
-		if rh.Hierarchy[i] == "*" {
+	for i := range orhh.hierarchy {
+		if rhh.hierarchy[i] == "*" {
 			return true
 		}
-		if orh.Hierarchy[i] != rh.Hierarchy[i] {
+		if orhh.hierarchy[i] != rhh.hierarchy[i] {
 			return false
 		}
 	}
 	return true
 }
 
-// ToString will join the Hierarchy slice to return a
-// resource hierarchy in the format {1}::{2}...
-func (rh ResourceHierarchy) ToString() string {
-	return strings.Join(rh.Hierarchy, "::")
-}
-
 // Permission is bound to a role and
 // defines the onwership level of an action over a resource
 type Permission struct {
-	RoleID            string         `json:"roleId" pg:"role_id"`
-	Service           string         `json:"service" pg:"service"`
-	OwnershipLevel    OwnershipLevel `json:"ownershipLevel" pg:"ownership_level"`
-	Action            Action         `json:"action" pg:"action"`
-	ResourceHierarchy ResourceHierarchy
+	RoleID            string            `json:"roleId" pg:"role_id"`
+	Service           string            `json:"service" pg:"service"`
+	OwnershipLevel    OwnershipLevel    `json:"ownershipLevel" pg:"ownership_level"`
+	Action            Action            `json:"action" pg:"action"`
+	ResourceHierarchy ResourceHierarchy `json:"resourceHierarchy" pg:"resource_hierarchy"`
 }
 
 // ValidatePermission validates a permission in string format
@@ -119,7 +122,7 @@ func BuildPermission(str string) (Permission, error) {
 	service := parts[0]
 	ol := OwnershipLevel(parts[1])
 	action := BuildAction(parts[2])
-	rh := BuildResourceHierarchy(parts[3:])
+	rh := ResourceHierarchy(strings.Join(parts[3:], "::"))
 	return Permission{
 		Service:           service,
 		OwnershipLevel:    ol,
@@ -146,6 +149,22 @@ func (p Permission) IsPresent(permissions []Permission) bool {
 func (p Permission) ToString() string {
 	return fmt.Sprintf(
 		"%s::%s::%s::%s", p.Service, p.OwnershipLevel, p.Action,
-		strings.Join(p.ResourceHierarchy.Hierarchy, "::"),
+		string(p.ResourceHierarchy),
 	)
+}
+
+// HasServiceFullAccess checks if permission allows it's role
+// to execute any action over any resourch hierarchy under it's service
+func (p Permission) HasServiceFullAccess() bool {
+	if !p.Action.All() {
+		return false
+	}
+	return p.ResourceHierarchy.All()
+}
+
+// HasServiceFullOwnership checks if permission allows it's role
+// to execute any action over any resourch hierarchy under it's service
+// and it's RO
+func (p Permission) HasServiceFullOwnership() bool {
+	return p.HasServiceFullAccess() && p.OwnershipLevel == OwnershipLevels.Owner
 }
