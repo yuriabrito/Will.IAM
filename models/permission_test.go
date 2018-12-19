@@ -126,7 +126,7 @@ func TestBuildPermission(t *testing.T) {
 			permission: models.Permission{
 				OwnershipLevel: models.OwnershipLevels.Owner,
 				Action:         models.BuildAction("ListSchedulers"),
-				Service:        models.BuildService("Maestro"),
+				Service:        "Maestro",
 				ResourceHierarchy: models.ResourceHierarchy{
 					Open:      true,
 					Size:      1,

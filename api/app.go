@@ -24,6 +24,7 @@ type App struct {
 	server          *http.Server
 	metricsReporter middleware.MetricsReporter
 	storage         *repositories.Storage
+	oauth2Provider  oauth2.Provider
 }
 
 // NewApp creates a new app
@@ -58,6 +59,7 @@ func (a *App) configureApp() error {
 		return err
 	}
 
+	a.configureGoogleOAuth2Provider()
 	a.configureServer()
 
 	return nil
@@ -75,6 +77,22 @@ func (a *App) configurePG() error {
 	return a.storage.ConfigurePG(a.config)
 }
 
+func (a *App) configureGoogleOAuth2Provider() {
+	tokensRepo := repositories.NewTokens(a.storage)
+	google := oauth2.NewGoogle(oauth2.GoogleConfig{
+		ClientID:      a.config.GetString("oauth2.google.clientId"),
+		ClientSecret:  a.config.GetString("oauth2.google.clientSecret"),
+		RedirectURL:   a.config.GetString("oauth2.google.redirectUrl"),
+		HostedDomains: a.config.GetStringSlice("oauth2.google.hostedDomains"),
+	}, tokensRepo)
+	a.oauth2Provider = google
+}
+
+// SetOAuth2Provider sets a provider in App
+func (a *App) SetOAuth2Provider(provider oauth2.Provider) {
+	a.oauth2Provider = provider
+}
+
 // GetRouter returns App's *mux.Router reference
 func (a *App) GetRouter() *mux.Router {
 	r := mux.NewRouter()
@@ -86,19 +104,11 @@ func (a *App) GetRouter() *mux.Router {
 		repositories.NewHealthcheck(a.storage),
 	)).Methods("GET").Name("healthcheck")
 
-	tokensRepo := repositories.NewTokens(a.storage)
-	google := oauth2.NewGoogle(oauth2.GoogleConfig{
-		ClientID:      a.config.GetString("oauth2.google.clientId"),
-		ClientSecret:  a.config.GetString("oauth2.google.clientSecret"),
-		RedirectURL:   a.config.GetString("oauth2.google.redirectUrl"),
-		HostedDomains: a.config.GetStringSlice("oauth2.google.hostedDomains"),
-	}, tokensRepo)
-
 	serviceAccountsRepo := repositories.NewServiceAccounts(a.storage)
 	rolesRepo := repositories.NewRoles(a.storage)
 	permissionsRepo := repositories.NewPermissions(a.storage)
 	serviceAccountsUseCase := usecases.NewServiceAccounts(
-		serviceAccountsRepo, rolesRepo, permissionsRepo, google,
+		serviceAccountsRepo, rolesRepo, permissionsRepo, a.oauth2Provider,
 	)
 
 	r.HandleFunc(
@@ -109,13 +119,13 @@ func (a *App) GetRouter() *mux.Router {
 
 	r.HandleFunc(
 		"/authentication/build_url",
-		authenticationBuildURLHandler(google),
+		authenticationBuildURLHandler(a.oauth2Provider),
 	).
 		Methods("GET").Name("authenticationBuildURLHandler")
 
 	r.HandleFunc(
 		"/authentication",
-		authenticationHandler(google),
+		authenticationHandler(a.oauth2Provider),
 	).
 		Methods("GET").Name("authenticationBuildURLHandler")
 
@@ -124,6 +134,18 @@ func (a *App) GetRouter() *mux.Router {
 		authenticationSSOTestHandler(),
 	).
 		Methods("GET").Name("authenticationBuildURLHandler")
+
+	servicesRepo := repositories.NewServices(a.storage)
+	servicesUseCase := usecases.NewServices(servicesRepo)
+	authMiddle := authMiddleware(serviceAccountsUseCase)
+
+	r.Handle(
+		"/services",
+		authMiddle(http.HandlerFunc(
+			servicesCreateHandler(servicesUseCase),
+		)),
+	).
+		Methods("POST").Name("servicesCreateHandler")
 
 	return r
 }

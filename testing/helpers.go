@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/ghostec/Will.IAM/api"
+	"github.com/ghostec/Will.IAM/oauth2"
 	"github.com/ghostec/Will.IAM/repositories"
 	"github.com/ghostec/Will.IAM/utils"
 	"github.com/sirupsen/logrus"
@@ -35,6 +36,7 @@ func GetLogger(t *testing.T) logrus.FieldLogger {
 // GetApp is a helper to create an *api.App
 func GetApp(t *testing.T) *api.App {
 	app, err := api.NewApp("0.0.0.0", 8080, GetConfig(t), GetLogger(t), nil)
+	app.SetOAuth2Provider(oauth2.NewProviderBlankMock())
 	if err != nil {
 		t.Fatal(err)
 		return nil

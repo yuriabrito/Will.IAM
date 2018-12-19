@@ -36,6 +36,7 @@ func TestServiceAccountsCreate(t *testing.T) {
 	beforeEachServiceAccounts(t)
 	saUC := getServiceAccountsUseCase(t)
 	saM := &models.ServiceAccount{
+		Name:  "some name",
 		Email: "test@domain.com",
 	}
 	if err := saUC.Create(saM); err != nil {
@@ -50,6 +51,7 @@ func TestServiceAccountsCreateShouldCreateRoleAndRoleBinding(t *testing.T) {
 	beforeEachServiceAccounts(t)
 	saUC := getServiceAccountsUseCase(t)
 	saM := &models.ServiceAccount{
+		Name:  "some name",
 		Email: "test@domain.com",
 	}
 	if err := saUC.Create(saM); err != nil {

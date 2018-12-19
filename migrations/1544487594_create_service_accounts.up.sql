@@ -2,9 +2,13 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE IF NOT EXISTS service_accounts (
 	id UUID PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4(),
+  name VARCHAR(200) NOT NULL,
 	key_id VARCHAR(200),
 	key_secret VARCHAR(200),
 	email VARCHAR(200),
 	created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
 	updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS service_accounts_name ON service_accounts (name);
+CREATE UNIQUE INDEX IF NOT EXISTS service_accounts_key_id_email ON service_accounts (key_id, email);

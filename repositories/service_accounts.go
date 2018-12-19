@@ -1,6 +1,10 @@
 package repositories
 
-import "github.com/ghostec/Will.IAM/models"
+import (
+	"fmt"
+
+	"github.com/ghostec/Will.IAM/models"
+)
 
 // ServiceAccounts repository
 type ServiceAccounts interface {
@@ -24,10 +28,13 @@ func (sas serviceAccounts) ForEmail(
 ) (*models.ServiceAccount, error) {
 	sa := &models.ServiceAccount{}
 	if _, err := sas.storage.PG.DB.Query(
-		&sa, `SELECT id, key_id, key_secret, email
-		FROM service_accounts WHERE email = ?`, email,
+		sa, `SELECT id, name, key_id, key_secret, email
+		FROM service_accounts WHERE email = ? LIMIT 1`, email,
 	); err != nil {
 		return nil, err
+	}
+	if sa.ID == "" {
+		return nil, fmt.Errorf("Service Account not found for email %s", email)
 	}
 	return sa, nil
 }
@@ -38,7 +45,7 @@ func (sas serviceAccounts) ForKeyPair(
 ) (*models.ServiceAccount, error) {
 	sa := &models.ServiceAccount{}
 	if _, err := sas.storage.PG.DB.Query(
-		&sa, `SELECT id, key_id, key_secret, email
+		&sa, `SELECT id, name, key_id, key_secret, email
 		FROM service_accounts WHERE key_id = ? AND key_secret`, keyID, keySecret,
 	); err != nil {
 		return nil, err
@@ -48,7 +55,7 @@ func (sas serviceAccounts) ForKeyPair(
 
 func (sas serviceAccounts) Create(sa *models.ServiceAccount) error {
 	_, err := sas.storage.PG.DB.Query(
-		sa, "INSERT INTO service_accounts (email) VALUES (?email) RETURNING id", sa,
+		sa, "INSERT INTO service_accounts (name, email) VALUES (?name, ?email) RETURNING id", sa,
 	)
 	return err
 }

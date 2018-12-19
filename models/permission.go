@@ -36,14 +36,6 @@ func BuildAction(str string) Action {
 	return Action(str)
 }
 
-// Service type
-type Service string
-
-// BuildService from string
-func BuildService(str string) Service {
-	return Service(str)
-}
-
 // ResourceHierarchy is either a complete or an open hierarchy to something
 // Eg:
 // Complete: maestro::sniper-3d::na::sniper3d-red
@@ -90,7 +82,7 @@ func (rh ResourceHierarchy) ToString() string {
 // defines the onwership level of an action over a resource
 type Permission struct {
 	RoleID            string         `json:"roleId" pg:"role_id"`
-	Service           Service        `json:"service" pg:"service"`
+	Service           string         `json:"service" pg:"service"`
 	OwnershipLevel    OwnershipLevel `json:"ownershipLevel" pg:"ownership_level"`
 	Action            Action         `json:"action" pg:"action"`
 	ResourceHierarchy ResourceHierarchy
@@ -124,7 +116,7 @@ func BuildPermission(str string) (Permission, error) {
 		return Permission{}, err
 	}
 	parts := strings.Split(str, "::")
-	service := BuildService(parts[0])
+	service := parts[0]
 	ol := OwnershipLevel(parts[1])
 	action := BuildAction(parts[2])
 	rh := BuildResourceHierarchy(parts[3:])

@@ -68,6 +68,8 @@ test:
 	@make stop-deps-test
 
 test-fast:
+	@make drop-test
+	@make migrate-test
 	@make unit
 	@make integration
 

@@ -12,8 +12,17 @@ type serviceAccountIDCtxKeyType string
 
 const serviceAccountIDCtxKey = serviceAccountIDCtxKeyType("serviceAccountID")
 
-// AuthMiddleware authenticates either access_token or key pair
-func AuthMiddleware(
+func getServiceAccountID(ctx context.Context) (string, bool) {
+	v := ctx.Value(serviceAccountIDCtxKey)
+	vv, ok := v.(string)
+	if !ok {
+		return "", false
+	}
+	return vv, true
+}
+
+// authMiddleware authenticates either access_token or key pair
+func authMiddleware(
 	saUseCase usecases.ServiceAccounts,
 ) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -37,6 +46,7 @@ func AuthMiddleware(
 				accessToken := parts[1]
 				accessTokenAuth, err := saUseCase.AuthenticateAccessToken(accessToken)
 				if err != nil {
+					println(err.Error())
 					w.WriteHeader(http.StatusInternalServerError)
 					return
 				}

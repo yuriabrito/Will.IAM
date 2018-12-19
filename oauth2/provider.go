@@ -14,7 +14,9 @@ type Provider interface {
 }
 
 // ProviderBlankMock is a Provider mock will all dummy implementations
-type ProviderBlankMock struct{}
+type ProviderBlankMock struct {
+	Email string
+}
 
 // NewProviderBlankMock ctor
 func NewProviderBlankMock() *ProviderBlankMock {
@@ -36,8 +38,12 @@ func (p *ProviderBlankMock) ExchangeCode(any string) (*AuthResult, error) {
 
 // Authenticate dummy
 func (p *ProviderBlankMock) Authenticate(any string) (*AuthResult, error) {
+	email := "any@email.com"
+	if p.Email != "" {
+		email = p.Email
+	}
 	return &AuthResult{
-		AccessToken: "any",
-		Email:       "any",
+		AccessToken: any,
+		Email:       email,
 	}, nil
 }
