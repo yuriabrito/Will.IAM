@@ -22,11 +22,12 @@ func (ss services) Create(
 	service *models.Service, creatorServiceAccountID string,
 ) error {
 	// TODO: use tx
-	if err := ss.servicesRepository.Create(service); err != nil {
-		return err
-	}
 	sa := models.BuildKeyPairServiceAccount(service.Name)
 	if err := ss.serviceAccountsUseCase.Create(sa); err != nil {
+		return err
+	}
+	service.ServiceAccountID = sa.ID
+	if err := ss.servicesRepository.Create(service); err != nil {
 		return err
 	}
 	fullAccessPermission := models.Permission{
