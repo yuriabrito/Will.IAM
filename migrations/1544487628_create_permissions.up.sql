@@ -6,5 +6,6 @@ CREATE TABLE IF NOT EXISTS permissions (
   service VARCHAR(200) NOT NULL,
   resource_hierarchy VARCHAR(1000),
 	created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-	updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+	updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  FOREIGN KEY(role_id) REFERENCES roles (id)
 );

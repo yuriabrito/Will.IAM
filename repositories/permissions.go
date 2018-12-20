@@ -8,7 +8,7 @@ import (
 // Permissions repository
 type Permissions interface {
 	ForRoles([]models.Role) ([]models.Permission, error)
-	Create(models.Permission) error
+	Create(*models.Permission) error
 }
 
 type permissions struct {
@@ -34,11 +34,11 @@ action, resource_hierarchy FROM permissions
 	return permissions, nil
 }
 
-func (ps *permissions) Create(p models.Permission) error {
+func (ps *permissions) Create(p *models.Permission) error {
 	_, err := ps.storage.PG.DB.Exec(
 		`INSERT INTO permissions (role_id, service, ownership_level, action,
-		resource_hierarchy) VALUES (?, ?, ?, ?, ?)`, p.RoleID, p.Service,
-		p.OwnershipLevel, p.Action, p.ResourceHierarchy,
+		resource_hierarchy) VALUES (?, ?, ?, ?, ?) RETURNING id`, p.RoleID,
+		p.Service, p.OwnershipLevel, p.Action, p.ResourceHierarchy,
 	)
 	return err
 }

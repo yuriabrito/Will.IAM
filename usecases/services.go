@@ -7,6 +7,7 @@ import (
 
 // Services contract
 type Services interface {
+	All() ([]models.Service, error)
 	Create(*models.Service, string) error
 }
 
@@ -30,19 +31,25 @@ func (ss services) Create(
 	if err := ss.servicesRepository.Create(service); err != nil {
 		return err
 	}
-	fullAccessPermission := models.Permission{
-		Service:           service.PermissionName,
-		OwnershipLevel:    models.OwnershipLevels.Owner,
-		Action:            models.Action("*"),
-		ResourceHierarchy: models.ResourceHierarchy("*"),
+	buildFullAccessPermission := func() *models.Permission {
+		return &models.Permission{
+			Service:           service.PermissionName,
+			OwnershipLevel:    models.OwnershipLevels.Owner,
+			Action:            models.Action("*"),
+			ResourceHierarchy: models.ResourceHierarchy("*"),
+		}
 	}
 	ss.serviceAccountsUseCase.CreatePermission(
-		sa.ID, fullAccessPermission,
+		sa.ID, buildFullAccessPermission(),
 	)
 	ss.serviceAccountsUseCase.CreatePermission(
-		creatorServiceAccountID, fullAccessPermission,
+		creatorServiceAccountID, buildFullAccessPermission(),
 	)
 	return nil
+}
+
+func (ss services) All() ([]models.Service, error) {
+	return ss.servicesRepository.All()
 }
 
 // NewServices services' ctor

@@ -36,8 +36,12 @@ func TestRolesCreatePermission(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err.Error())
 	}
-	p.RoleID = "798a4f9a-cad4-4bd5-86a6-ca6a99fa73d5"
-	if err := rsUC.CreatePermission(p); err != nil {
+	r := &models.Role{Name: "Test role name"}
+	if err := rsUC.Create(r); err != nil {
+		t.Errorf("Unexpected error: %s", err.Error())
+	}
+	p.RoleID = r.ID
+	if err := rsUC.CreatePermission(r.ID, &p); err != nil {
 		t.Errorf("Unexpected error: %s", err.Error())
 	}
 	ps, err := rsUC.GetPermissions(p.RoleID)

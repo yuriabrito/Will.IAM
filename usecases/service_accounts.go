@@ -16,7 +16,7 @@ type ServiceAccounts interface {
 	AuthenticateKeyPair(string, string) (string, error)
 	HasPermission(string, string) (bool, error)
 	GetPermissions(string) ([]models.Permission, error)
-	CreatePermission(string, models.Permission) error
+	CreatePermission(string, *models.Permission) error
 	GetRoles(string) ([]models.Role, error)
 }
 
@@ -139,7 +139,7 @@ func (sas serviceAccounts) GetPermissions(
 }
 
 func (sas serviceAccounts) CreatePermission(
-	serviceAccountID string, permission models.Permission,
+	serviceAccountID string, permission *models.Permission,
 ) error {
 	sa, err := sas.serviceAccountsRepository.Get(serviceAccountID)
 	if err != nil {
