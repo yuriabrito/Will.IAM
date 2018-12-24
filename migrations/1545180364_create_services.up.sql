@@ -5,5 +5,6 @@ CREATE TABLE IF NOT EXISTS services (
   service_account_id UUID NOT NULL,
   creator_service_account_id UUID NOT NULL,
 	created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-	updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+	updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  FOREIGN KEY(service_account_id) REFERENCES service_accounts (id) ON DELETE CASCADE
 );

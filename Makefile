@@ -1,4 +1,4 @@
-testable_packages=`go list ./... | egrep -v 'constants|mocks|testing'`
+testable_packages=$(shell go list ./... | egrep -v 'constants|mocks|testing')
 project=$(shell basename $(PWD))
 project_test=${project}-test
 project_sanitized=$(shell echo $(project) | sed -e "s/\-//")
@@ -80,7 +80,11 @@ unit:
 
 integration:
 	@echo "Integration Tests"
-	@go test ${testable_packages} -tags=integration -coverprofile integration.coverprofile -v
+	@ret=0 && for pkg in ${testable_packages}; do \
+		echo $$pkg; \
+		go test $$pkg -tags=integration -coverprofile integration.coverprofile -v; \
+		test $$? -eq 0 || ret=1; \
+	done; exit $$ret
 	@make gather-integration-profiles
 
 gather-unit-profiles:

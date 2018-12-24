@@ -12,4 +12,5 @@ CREATE TABLE IF NOT EXISTS service_accounts (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS service_accounts_name ON service_accounts (name);
-CREATE UNIQUE INDEX IF NOT EXISTS service_accounts_key_id_email ON service_accounts (key_id, email);
+CREATE UNIQUE INDEX IF NOT EXISTS service_accounts_key_id_key_secret ON service_accounts (key_id, key_secret);
+CREATE UNIQUE INDEX IF NOT EXISTS service_accounts_email ON service_accounts (email);

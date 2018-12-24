@@ -6,8 +6,10 @@ import (
 	"testing"
 
 	"github.com/ghostec/Will.IAM/api"
+	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/oauth2"
 	"github.com/ghostec/Will.IAM/repositories"
+	"github.com/ghostec/Will.IAM/usecases"
 	"github.com/ghostec/Will.IAM/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -63,4 +65,25 @@ func GetStorage(t *testing.T) *repositories.Storage {
 		panic(err)
 	}
 	return s
+}
+
+// GetServiceAccountsUseCase returns a usecases.ServiceAccounts
+func GetServiceAccountsUseCase(t *testing.T) usecases.ServiceAccounts {
+	t.Helper()
+	storage := GetStorage(t)
+	saRepo := repositories.NewServiceAccounts(storage)
+	rRepo := repositories.NewRoles(storage)
+	pRepo := repositories.NewPermissions(storage)
+	providerBlankMock := oauth2.NewProviderBlankMock()
+	return usecases.NewServiceAccounts(saRepo, rRepo, pRepo, providerBlankMock)
+}
+
+// CreateRootServiceAccount creates a root service account with root access
+func CreateRootServiceAccount(t *testing.T) *models.ServiceAccount {
+	saUC := GetServiceAccountsUseCase(t)
+	rootSA, err := saUC.CreateKeyPairType("root")
+	if err != nil {
+		panic(err)
+	}
+	return rootSA
 }

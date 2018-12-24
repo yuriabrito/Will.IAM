@@ -147,6 +147,22 @@ func (a *App) GetRouter() *mux.Router {
 	).
 		Methods("POST").Name("servicesCreateHandler")
 
+	r.Handle(
+		"/service_accounts/{id}",
+		authMiddle(http.HandlerFunc(
+			serviceAccountsGetHandler(serviceAccountsUseCase),
+		)),
+	).
+		Methods("GET").Name("serviceAccountsGetHandler")
+
+	r.Handle(
+		"/service_accounts",
+		authMiddle(http.HandlerFunc(
+			serviceAccountsCreateHandler(serviceAccountsUseCase),
+		)),
+	).
+		Methods("POST").Name("serviceAccountsCreateHandler")
+
 	return r
 }
 

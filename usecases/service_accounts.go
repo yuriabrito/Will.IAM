@@ -12,11 +12,13 @@ import (
 // ServiceAccounts define entrypoints for ServiceAccount actions
 type ServiceAccounts interface {
 	Create(*models.ServiceAccount) error
+	CreateKeyPairType(string) (*models.ServiceAccount, error)
 	AuthenticateAccessToken(string) (*AccessTokenAuth, error)
 	AuthenticateKeyPair(string, string) (string, error)
 	HasPermission(string, string) (bool, error)
 	GetPermissions(string) ([]models.Permission, error)
 	CreatePermission(string, *models.Permission) error
+	Get(string) (*models.ServiceAccount, error)
 	GetRoles(string) ([]models.Role, error)
 }
 
@@ -61,6 +63,19 @@ func (sas serviceAccounts) Create(sa *models.ServiceAccount) error {
 	return nil
 }
 
+// CreateKeyPairType will build a random key pair and create a
+// Service Account with it
+func (sas serviceAccounts) CreateKeyPairType(
+	saName string,
+) (*models.ServiceAccount, error) {
+	// TODO: pass tx to repo create -> service_accounts + roles + role_bindings
+	saKP := models.BuildKeyPairServiceAccount(saName)
+	if err := sas.Create(saKP); err != nil {
+		return nil, err
+	}
+	return saKP, nil
+}
+
 // GetRoles returns all roles to which the serviceAccountID is bound to
 func (sas serviceAccounts) GetRoles(
 	serviceAccountID string,
@@ -70,6 +85,17 @@ func (sas serviceAccounts) GetRoles(
 		return nil, err
 	}
 	return roles, nil
+}
+
+// Get returns a service account by id
+func (sas serviceAccounts) Get(
+	serviceAccountID string,
+) (*models.ServiceAccount, error) {
+	sa, err := sas.serviceAccountsRepository.Get(serviceAccountID)
+	if err != nil {
+		return nil, err
+	}
+	return sa, nil
 }
 
 // AccessTokenAuth stores a ServiceAccountID and the (maybe refreshed)

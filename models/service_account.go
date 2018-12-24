@@ -1,5 +1,7 @@
 package models
 
+import "github.com/gofrs/uuid"
+
 // ServiceAccount type
 type ServiceAccount struct {
 	ID         string `json:"id" pg:"id"`
@@ -15,7 +17,7 @@ type ServiceAccount struct {
 func BuildKeyPairServiceAccount(name string) *ServiceAccount {
 	return &ServiceAccount{
 		Name:      name,
-		KeyID:     "asdf",
-		KeySecret: "zxcv",
+		KeyID:     uuid.Must(uuid.NewV4()).String(),
+		KeySecret: uuid.Must(uuid.NewV4()).String(),
 	}
 }

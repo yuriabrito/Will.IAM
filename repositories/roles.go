@@ -1,6 +1,8 @@
 package repositories
 
-import "github.com/ghostec/Will.IAM/models"
+import (
+	"github.com/ghostec/Will.IAM/models"
+)
 
 // Roles repository
 type Roles interface {

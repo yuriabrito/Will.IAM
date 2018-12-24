@@ -46,7 +46,6 @@ func authMiddleware(
 				accessToken := parts[1]
 				accessTokenAuth, err := saUseCase.AuthenticateAccessToken(accessToken)
 				if err != nil {
-					println(err.Error())
 					w.WriteHeader(http.StatusInternalServerError)
 					return
 				}
