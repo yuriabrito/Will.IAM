@@ -85,5 +85,15 @@ func CreateRootServiceAccount(t *testing.T) *models.ServiceAccount {
 	if err != nil {
 		panic(err)
 	}
+	p, err := models.BuildPermission(
+		models.BuildWillIAMPermissionStr(models.OwnershipLevels.Owner, "*", "*"),
+	)
+	if err != nil {
+		panic(err)
+	}
+	err = saUC.CreatePermission(rootSA.ID, &p)
+	if err != nil {
+		panic(err)
+	}
 	return rootSA
 }

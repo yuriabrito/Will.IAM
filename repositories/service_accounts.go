@@ -19,7 +19,7 @@ type serviceAccounts struct {
 }
 
 func (sas serviceAccounts) Get(id string) (*models.ServiceAccount, error) {
-	sa := &models.ServiceAccount{}
+	sa := []*models.ServiceAccount{}
 	if _, err := sas.storage.PG.DB.Query(
 		&sa,
 		`SELECT id, name, key_id, key_secret, email, base_role_id
@@ -29,7 +29,10 @@ func (sas serviceAccounts) Get(id string) (*models.ServiceAccount, error) {
 	); err != nil {
 		return nil, err
 	}
-	return sa, nil
+	if len(sa) == 0 {
+		return nil, fmt.Errorf("service account not found")
+	}
+	return sa[0], nil
 }
 
 // ForEmail retrieves Service Account corresponding

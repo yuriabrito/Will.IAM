@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/usecases"
 	"github.com/gorilla/mux"
 )
@@ -63,6 +64,20 @@ func serviceAccountsCreateHandler(
 	saUC usecases.ServiceAccounts,
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		saID, _ := getServiceAccountID(r.Context())
+		has, err := saUC.HasPermission(
+			saID, models.BuildWillIAMPermissionStr(
+				models.OwnershipLevels.Lender, "CreateServiceAccount", "*",
+			),
+		)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if !has {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
 		body, err := ioutil.ReadAll(r.Body)
 		defer r.Body.Close()
 		if err != nil {
@@ -78,7 +93,6 @@ func serviceAccountsCreateHandler(
 		}
 		_, err = saUC.CreateKeyPairType(name)
 		if err != nil {
-			println(err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

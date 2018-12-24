@@ -134,7 +134,8 @@ func BuildPermission(str string) (Permission, error) {
 // IsPresent checks if a permission is satisfied in a slice
 func (p Permission) IsPresent(permissions []Permission) bool {
 	for _, pp := range permissions {
-		if pp.Action != p.Action || pp.Service != p.Service ||
+		if pp.Service != p.Service ||
+			(pp.Action != "*" && pp.Action != p.Action) ||
 			pp.OwnershipLevel.Less(p.OwnershipLevel) {
 			continue
 		}
@@ -167,4 +168,10 @@ func (p Permission) HasServiceFullAccess() bool {
 // and it's RO
 func (p Permission) HasServiceFullOwnership() bool {
 	return p.HasServiceFullAccess() && p.OwnershipLevel == OwnershipLevels.Owner
+}
+
+// BuildWillIAMPermissionStr builds a permission in the format expected
+// by WillIAM handlers
+func BuildWillIAMPermissionStr(ro OwnershipLevel, action, rh string) string {
+	return fmt.Sprintf("WillIAM::%s::%s::%s", string(ro), action, rh)
 }
