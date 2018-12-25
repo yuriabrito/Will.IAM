@@ -111,9 +111,15 @@ func (a *App) GetRouter() *mux.Router {
 		serviceAccountsRepo, rolesRepo, permissionsRepo, a.oauth2Provider,
 	)
 
-	r.HandleFunc(
-		"/service_accounts/{id}/permissions",
-		serviceAccountsHasPermissionHandler(serviceAccountsUseCase),
+	servicesRepo := repositories.NewServices(a.storage)
+	servicesUseCase := usecases.NewServices(servicesRepo, serviceAccountsUseCase)
+	authMiddle := authMiddleware(serviceAccountsUseCase)
+
+	r.Handle(
+		"/service_accounts/me/permissions/has",
+		authMiddle(http.HandlerFunc(
+			serviceAccountsHasPermissionHandler(serviceAccountsUseCase),
+		)),
 	).
 		Methods("GET").Name("serviceAccountsHasPermission")
 
@@ -134,10 +140,6 @@ func (a *App) GetRouter() *mux.Router {
 		authenticationSSOTestHandler(),
 	).
 		Methods("GET").Name("authenticationBuildURLHandler")
-
-	servicesRepo := repositories.NewServices(a.storage)
-	servicesUseCase := usecases.NewServices(servicesRepo, serviceAccountsUseCase)
-	authMiddle := authMiddleware(serviceAccountsUseCase)
 
 	r.Handle(
 		"/services",

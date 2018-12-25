@@ -20,7 +20,7 @@ func serviceAccountsHasPermissionHandler(
 			Write(w, http.StatusUnprocessableEntity, `{"error": "querystrings.permission is required"}`)
 			return
 		}
-		saID := mux.Vars(r)["id"]
+		saID, _ := getServiceAccountID(r.Context())
 		has, err :=
 			sasUC.HasPermission(saID, permissionSl[0])
 		if err != nil {
