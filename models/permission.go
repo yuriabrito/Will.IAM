@@ -84,6 +84,7 @@ func (rh ResourceHierarchy) Contains(orh ResourceHierarchy) bool {
 // Permission is bound to a role and
 // defines the onwership level of an action over a resource
 type Permission struct {
+	ID                string            `json:"id" pg:"id"`
 	RoleID            string            `json:"roleId" pg:"role_id"`
 	Service           string            `json:"service" pg:"service"`
 	OwnershipLevel    OwnershipLevel    `json:"ownershipLevel" pg:"ownership_level"`

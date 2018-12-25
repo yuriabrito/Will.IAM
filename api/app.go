@@ -173,6 +173,16 @@ func (a *App) GetRouter() *mux.Router {
 	).
 		Methods("POST").Name("rolesCreatePermissionHandler")
 
+	permissionsUseCase := usecases.NewPermissions(permissionsRepo)
+
+	r.Handle(
+		"/permissions/{id}",
+		authMiddle(http.HandlerFunc(permissionsDeleteHandler(
+			serviceAccountsUseCase, permissionsUseCase,
+		))),
+	).
+		Methods("DELETE").Name("permissionsDeleteHandler")
+
 	return r
 }
 

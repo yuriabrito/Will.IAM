@@ -18,9 +18,15 @@ func rolesCreatePermissionHandler(
 			Write(w, http.StatusUnprocessableEntity, `{"error": "querystrings.permission is required"}`)
 			return
 		}
+		sameP, err := models.BuildPermission(permissionSl[0])
+		if err != nil {
+			Write(w, http.StatusBadRequest, `{"error": "querystrings.permission malformed"}`)
+			return
+		}
+		sameP.OwnershipLevel = models.OwnershipLevels.Owner
 
 		saID, _ := getServiceAccountID(r.Context())
-		has, err := sasUC.HasPermission(saID, permissionSl[0])
+		has, err := sasUC.HasPermission(saID, sameP.ToString())
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -32,7 +38,7 @@ func rolesCreatePermissionHandler(
 		rID := mux.Vars(r)["id"]
 		p, err := models.BuildPermission(permissionSl[0])
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			Write(w, http.StatusBadRequest, `{"error": "querystrings.permission malformed"}`)
 			return
 		}
 		err = rsUC.CreatePermission(rID, &p)
