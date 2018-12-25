@@ -163,6 +163,16 @@ func (a *App) GetRouter() *mux.Router {
 	).
 		Methods("POST").Name("serviceAccountsCreateHandler")
 
+	rolesUseCase := usecases.NewRoles(rolesRepo, permissionsRepo)
+
+	r.Handle(
+		"/roles/{id}/permissions",
+		authMiddle(http.HandlerFunc(
+			rolesCreatePermissionHandler(serviceAccountsUseCase, rolesUseCase),
+		)),
+	).
+		Methods("POST").Name("rolesCreatePermissionHandler")
+
 	return r
 }
 

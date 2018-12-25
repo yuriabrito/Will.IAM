@@ -134,7 +134,7 @@ func BuildPermission(str string) (Permission, error) {
 // IsPresent checks if a permission is satisfied in a slice
 func (p Permission) IsPresent(permissions []Permission) bool {
 	for _, pp := range permissions {
-		if pp.Service != p.Service ||
+		if (pp.Service != "*" && pp.Service != p.Service) ||
 			(pp.Action != "*" && pp.Action != p.Action) ||
 			pp.OwnershipLevel.Less(p.OwnershipLevel) {
 			continue

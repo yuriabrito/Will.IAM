@@ -11,18 +11,18 @@ import (
 )
 
 func serviceAccountsHasPermissionHandler(
-	saUC usecases.ServiceAccounts,
+	sasUC usecases.ServiceAccounts,
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		qs := r.URL.Query()
 		permissionSl := qs["permission"]
 		if len(permissionSl) == 0 {
-			Write(w, http.StatusBadRequest, `{"error": "permission is required"}`)
+			Write(w, http.StatusUnprocessableEntity, `{"error": "querystrings.permission is required"}`)
 			return
 		}
 		saID := mux.Vars(r)["id"]
 		has, err :=
-			saUC.HasPermission(saID, permissionSl[0])
+			sasUC.HasPermission(saID, permissionSl[0])
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -36,7 +36,7 @@ func serviceAccountsHasPermissionHandler(
 }
 
 func serviceAccountsGetHandler(
-	saUC usecases.ServiceAccounts,
+	sasUC usecases.ServiceAccounts,
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// qs := r.URL.Query()
@@ -45,7 +45,7 @@ func serviceAccountsGetHandler(
 		// 	return
 		// }
 		saID := mux.Vars(r)["id"]
-		sa, err := saUC.Get(saID)
+		sa, err := sasUC.Get(saID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -61,11 +61,11 @@ func serviceAccountsGetHandler(
 }
 
 func serviceAccountsCreateHandler(
-	saUC usecases.ServiceAccounts,
+	sasUC usecases.ServiceAccounts,
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		saID, _ := getServiceAccountID(r.Context())
-		has, err := saUC.HasPermission(
+		has, err := sasUC.HasPermission(
 			saID, models.BuildWillIAMPermissionStr(
 				models.OwnershipLevels.Lender, "CreateServiceAccount", "*",
 			),
@@ -91,7 +91,7 @@ func serviceAccountsCreateHandler(
 			Write(w, http.StatusUnprocessableEntity, "body.name is required")
 			return
 		}
-		_, err = saUC.CreateKeyPairType(name)
+		_, err = sasUC.CreateKeyPairType(name)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return

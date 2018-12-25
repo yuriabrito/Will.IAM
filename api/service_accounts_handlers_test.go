@@ -34,7 +34,7 @@ func TestServiceAccountHasPermissionHandler(t *testing.T) {
 	tt := []hasPermissionTest{
 		hasPermissionTest{
 			request:        "/service_accounts/1234/permissions",
-			expectedStatus: http.StatusBadRequest,
+			expectedStatus: http.StatusUnprocessableEntity,
 		},
 		hasPermissionTest{
 			request:        "/service_accounts/c91cfe41-a9cb-4685-8517-2411d1445616/permissions?permission=Service::RL::TestAction::*",
@@ -47,7 +47,7 @@ func TestServiceAccountHasPermissionHandler(t *testing.T) {
 		req, _ := http.NewRequest("GET", tt.request, nil)
 		rec := helpers.DoRequest(t, req, app.GetRouter())
 		if rec.Code != tt.expectedStatus {
-			t.Errorf("Expected http.StatusForbidden. Got %d", rec.Code)
+			t.Errorf("Expected %d. Got %d", tt.expectedStatus, rec.Code)
 		}
 	}
 }
