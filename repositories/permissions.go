@@ -12,6 +12,8 @@ type Permissions interface {
 	Get(string) (*models.Permission, error)
 	ForRoles([]models.Role) ([]models.Permission, error)
 	Create(*models.Permission) error
+	CreateRequest(string, *models.PermissionRequest) error
+	GetPermissionRequests(string) ([]models.PermissionRequest, error)
 	Delete(string) error
 }
 
@@ -32,6 +34,22 @@ action, resource_hierarchy FROM permissions
 		return nil, fmt.Errorf("permission %s not found", id)
 	}
 	return p, nil
+}
+
+// GetPermissionRequets retrieve permission requests for a service account
+func (ps *permissions) GetPermissionRequests(
+	saID string,
+) ([]models.PermissionRequest, error) {
+	prs := []models.PermissionRequest{}
+	_, err := ps.storage.PG.DB.Query(
+		&prs, `SELECT id, service, action, resource_hierarchy, message, state,
+		created_at, updated_at FROM permissions_requests
+		WHERE service_account_id = ?`, saID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return prs, nil
 }
 
 func (ps *permissions) ForRoles(
@@ -59,6 +77,15 @@ func (ps *permissions) Create(p *models.Permission) error {
 		resource_hierarchy) VALUES (?, ?, ?, ?, ?) RETURNING id`, p.RoleID,
 		p.Service, p.OwnershipLevel, p.Action, p.ResourceHierarchy,
 	)
+	return err
+}
+func (ps *permissions) CreateRequest(
+	saID string, r *models.PermissionRequest,
+) error {
+	_, err := ps.storage.PG.DB.Query(r,
+		`INSERT INTO permissions_requests (service, action, resource_hierarchy,
+		message, state, service_account_id) VALUES (?, ?, ?, ?, ?, ?) RETURNING id`,
+		r.Service, r.Action, r.ResourceHierarchy, r.Message, r.State, saID)
 	return err
 }
 

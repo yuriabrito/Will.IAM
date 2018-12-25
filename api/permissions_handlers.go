@@ -1,7 +1,9 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/ghostec/Will.IAM/models"
@@ -41,5 +43,65 @@ func permissionsDeleteHandler(
 			return
 		}
 		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func permissionsCreatePermissionRequestHandler(
+	sasUC usecases.ServiceAccounts, psUC usecases.Permissions,
+) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		body, err := ioutil.ReadAll(r.Body)
+		defer r.Body.Close()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		pr := &models.PermissionRequest{}
+		err = json.Unmarshal(body, pr)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		saID, _ := getServiceAccountID(r.Context())
+		has, err := sasUC.HasPermission(saID, pr.ToLenderString())
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if has {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		// TODO: check if there's a request with state = Created already NoContent
+
+		err = psUC.CreateRequest(saID, pr)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusAccepted)
+	}
+}
+
+func permissionsGetPermissionRequestsHandler(
+	sasUC usecases.ServiceAccounts, psUC usecases.Permissions,
+) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		saID, _ := getServiceAccountID(r.Context())
+		prs, err := psUC.GetPermissionRequests(saID)
+		if err != nil {
+			println(err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		bts, err := json.Marshal(prs)
+		if err != nil {
+			println(err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		WriteBytes(w, http.StatusOK, bts)
 	}
 }

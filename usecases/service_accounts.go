@@ -25,7 +25,7 @@ type ServiceAccounts interface {
 type serviceAccounts struct {
 	serviceAccountsRepository repositories.ServiceAccounts
 	rolesRepository           repositories.Roles
-	permissionsRepository     repositories.Permissions
+	permissionsUseCase        Permissions
 	oauth2Provider            oauth2.Provider
 }
 
@@ -33,13 +33,13 @@ type serviceAccounts struct {
 func NewServiceAccounts(
 	serviceAccountsRepository repositories.ServiceAccounts,
 	rolesRepository repositories.Roles,
-	permissionsRepository repositories.Permissions,
+	permissionsUseCase Permissions,
 	provider oauth2.Provider,
 ) ServiceAccounts {
 	return &serviceAccounts{
 		serviceAccountsRepository: serviceAccountsRepository,
 		rolesRepository:           rolesRepository,
-		permissionsRepository:     permissionsRepository,
+		permissionsUseCase:        permissionsUseCase,
 		oauth2Provider:            provider,
 	}
 }
@@ -157,7 +157,7 @@ func (sas serviceAccounts) GetPermissions(
 	if err != nil {
 		return nil, err
 	}
-	permissions, err := sas.permissionsRepository.ForRoles(roles)
+	permissions, err := sas.permissionsUseCase.ForRoles(roles)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +172,7 @@ func (sas serviceAccounts) CreatePermission(
 		return err
 	}
 	permission.RoleID = sa.BaseRoleID
-	if err := sas.permissionsRepository.Create(permission); err != nil {
+	if err := sas.permissionsUseCase.Create(permission); err != nil {
 		return err
 	}
 	return nil

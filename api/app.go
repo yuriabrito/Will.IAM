@@ -107,8 +107,9 @@ func (a *App) GetRouter() *mux.Router {
 	serviceAccountsRepo := repositories.NewServiceAccounts(a.storage)
 	rolesRepo := repositories.NewRoles(a.storage)
 	permissionsRepo := repositories.NewPermissions(a.storage)
+	permissionsUseCase := usecases.NewPermissions(permissionsRepo)
 	serviceAccountsUseCase := usecases.NewServiceAccounts(
-		serviceAccountsRepo, rolesRepo, permissionsRepo, a.oauth2Provider,
+		serviceAccountsRepo, rolesRepo, permissionsUseCase, a.oauth2Provider,
 	)
 
 	servicesRepo := repositories.NewServices(a.storage)
@@ -175,8 +176,6 @@ func (a *App) GetRouter() *mux.Router {
 	).
 		Methods("POST").Name("rolesCreatePermissionHandler")
 
-	permissionsUseCase := usecases.NewPermissions(permissionsRepo)
-
 	r.Handle(
 		"/permissions/{id}",
 		authMiddle(http.HandlerFunc(permissionsDeleteHandler(
@@ -184,6 +183,22 @@ func (a *App) GetRouter() *mux.Router {
 		))),
 	).
 		Methods("DELETE").Name("permissionsDeleteHandler")
+
+	r.Handle(
+		"/permissions/requests",
+		authMiddle(http.HandlerFunc(permissionsGetPermissionRequestsHandler(
+			serviceAccountsUseCase, permissionsUseCase,
+		))),
+	).
+		Methods("GET").Name("permissionsGetPermissionRequestsHandler")
+
+	r.Handle(
+		"/permissions/requests",
+		authMiddle(http.HandlerFunc(permissionsCreatePermissionRequestHandler(
+			serviceAccountsUseCase, permissionsUseCase,
+		))),
+	).
+		Methods("PUT").Name("permissionsCreatePermissionRequestHandler")
 
 	return r
 }

@@ -28,6 +28,11 @@ func (o OwnershipLevel) Less(oo OwnershipLevel) bool {
 	return false
 }
 
+// ToString returns string fmt
+func (o OwnershipLevel) ToString() string {
+	return string(o)
+}
+
 // Action is defined by IAM clients
 type Action string
 
@@ -38,7 +43,12 @@ func BuildAction(str string) Action {
 
 // All checks if action matches any
 func (a Action) All() bool {
-	return string(a) == "*"
+	return a.ToString() == "*"
+}
+
+// ToString returns string representation
+func (a Action) ToString() string {
+	return string(a)
 }
 
 // ResourceHierarchy is either a complete or an open hierarchy to something
@@ -79,6 +89,11 @@ func (rh ResourceHierarchy) Contains(orh ResourceHierarchy) bool {
 		}
 	}
 	return true
+}
+
+// ToString returns string representation
+func (rh ResourceHierarchy) ToString() string {
+	return string(rh)
 }
 
 // Permission is bound to a role and
@@ -175,4 +190,52 @@ func (p Permission) HasServiceFullOwnership() bool {
 // by WillIAM handlers
 func BuildWillIAMPermissionStr(ro OwnershipLevel, action, rh string) string {
 	return fmt.Sprintf("WillIAM::%s::%s::%s", string(ro), action, rh)
+}
+
+// PermissionRequest type
+type PermissionRequest struct {
+	ID                string                 `json:"id" pg:"id"`
+	Service           string                 `json:"service" pg:"service"`
+	Action            Action                 `json:"action" pg:"action"`
+	ResourceHierarchy ResourceHierarchy      `json:"resourceHierarchy" pg:"resource_hierarchy"`
+	Message           string                 `json:"message" pg:"message"`
+	State             PermissionRequestState `json:"state" pg:"state"`
+	CreatedUpdatedAt
+}
+
+// ToLenderString returns a permission formatted string with lender
+// ownership level
+func (r PermissionRequest) ToLenderString() string {
+	return fmt.Sprintf("%s::%s::%s::%s", r.Service,
+		OwnershipLevels.Lender.ToString(), r.Action.ToString(),
+		r.ResourceHierarchy.ToString())
+}
+
+// PermissionRequestState can be: created:0 granted:1 denied:2
+type PermissionRequestState int
+
+// PermissionRequestStates possible
+var PermissionRequestStates = struct {
+	Created PermissionRequestState
+	Granted PermissionRequestState
+	Denied  PermissionRequestState
+}{
+	Created: 0,
+	Granted: 1,
+	Denied:  2,
+}
+
+// ToString returns permission request state as string
+func (prs PermissionRequestState) ToString() string {
+	i := int(prs)
+	switch i {
+	case 0:
+		return "created"
+	case 1:
+		return "granted"
+	case 2:
+		return "denied"
+	default:
+		return "unknown"
+	}
 }
