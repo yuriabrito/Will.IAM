@@ -104,6 +104,14 @@ func (a *App) GetRouter() *mux.Router {
 		repositories.NewHealthcheck(a.storage),
 	)).Methods("GET").Name("healthcheck")
 
+	r.HandleFunc("/sso/auth/do",
+		authenticationBuildURLHandler(a.oauth2Provider),
+	).Methods("GET").Name("ssoAuthDo")
+
+	r.HandleFunc("/sso/auth/done",
+		authenticationExchangeCodeHandler(a.oauth2Provider),
+	).Methods("GET").Name("ssoAuthDone")
+
 	serviceAccountsRepo := repositories.NewServiceAccounts(a.storage)
 	rolesRepo := repositories.NewRoles(a.storage)
 	permissionsRepo := repositories.NewPermissions(a.storage)
@@ -111,6 +119,14 @@ func (a *App) GetRouter() *mux.Router {
 	serviceAccountsUseCase := usecases.NewServiceAccounts(
 		serviceAccountsRepo, rolesRepo, permissionsUseCase, a.oauth2Provider,
 	)
+
+	r.HandleFunc("/sso/auth/valid",
+		authenticationValidHandler(a.oauth2Provider, serviceAccountsUseCase),
+	).Methods("GET").Name("ssoAuthValid")
+
+	r.PathPrefix("/sso").Handler(http.StripPrefix("/sso", http.FileServer(
+		http.Dir("./assets/sso/")),
+	)).Methods("GET").Name("sso")
 
 	servicesRepo := repositories.NewServices(a.storage)
 	servicesUseCase := usecases.NewServices(servicesRepo, serviceAccountsUseCase)
@@ -123,24 +139,6 @@ func (a *App) GetRouter() *mux.Router {
 		)),
 	).
 		Methods("GET").Name("serviceAccountsHasPermission")
-
-	r.HandleFunc(
-		"/authentication/build_url",
-		authenticationBuildURLHandler(a.oauth2Provider),
-	).
-		Methods("GET").Name("authenticationBuildURLHandler")
-
-	r.HandleFunc(
-		"/authentication",
-		authenticationHandler(a.oauth2Provider),
-	).
-		Methods("GET").Name("authenticationBuildURLHandler")
-
-	r.HandleFunc(
-		"/authentication/sso_test",
-		authenticationSSOTestHandler(),
-	).
-		Methods("GET").Name("authenticationBuildURLHandler")
 
 	r.Handle(
 		"/services",

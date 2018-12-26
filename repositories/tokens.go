@@ -13,7 +13,7 @@ type tokens struct {
 }
 
 func (ts tokens) Get(accessToken string) (*models.Token, error) {
-	t := &models.Token{}
+	t := new(models.Token)
 	if _, err := ts.storage.PG.DB.Query(
 		t, "SELECT * FROM tokens WHERE access_token = ?", accessToken,
 	); err != nil {

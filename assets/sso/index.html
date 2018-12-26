@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Will.IAM SSO</title>
+    <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500" rel="stylesheet">
+  </head>
+  <style type="text/css">
+    body {
+      background-color: #ffffff;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+    .ace_editor * {
+      font-family: inherit;
+    }
+
+    a, a:link, a:visited, a:hover, a:active {
+      outline: none;
+      color: inherit;
+      text-decoration: none;
+    }
+  </style>
+  <body>
+    <script>
+      const urlParams = new URLSearchParams(window.location.search);
+      const accessToken = urlParams.get('accessToken')
+        || localStorage.getItem('accessToken');
+      const origin = urlParams.get('origin');
+      if (accessToken) {
+        const origin = urlParams.get('origin')
+        localStorage.setItem('accessToken', accessToken);
+        window.location.href = '/sso/auth/valid?accessToken='
+          + encodeURIComponent(accessToken) + '&origin='
+        + encodeURIComponent(origin);
+      } else {
+        window.location.href = '/sso/auth/do?origin=' + encodeURIComponent(origin);
+      }
+    </script>
+  </body>
+</html>
