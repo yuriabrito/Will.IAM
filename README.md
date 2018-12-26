@@ -4,11 +4,12 @@ Will.IAM solves identity and access management.
 
 Desired features:
 
-* [ ] Authentication with Google as OAUTH-2 provider.
+* [X] Authentication with Google as OAUTH-2 provider.
+  * [ ] Refresh token
 * [ ] RBAC authorization
   Permissions+Roles+/am
-* [ ] SSO - Single Sign-On
-  * [ ] SSO browser handler should save/get to/from localStorage and redirect to requester
+* [X] SSO - Single Sign-On
+  * [X] SSO browser handler should save/get to/from localStorage and redirect to requester
 
   Client redirects to server (browser), server has token in localStorage, redirects back with stored token. No button clicks :) Client should be careful to not log token to other parties (e.g google analytics)
 

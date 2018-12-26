@@ -74,7 +74,7 @@ func authenticationValidHandler(
 			return
 		}
 		v := url.Values{}
-		_, err := sasUC.AuthenticateAccessToken(qs["accessToken"][0])
+		authResult, err := sasUC.AuthenticateAccessToken(qs["accessToken"][0])
 		if err != nil {
 			// TODO: check if err is non-authorized
 			v.Add("origin", qs["origin"][0])
@@ -83,7 +83,7 @@ func authenticationValidHandler(
 			)
 			return
 		}
-		v.Add("accessToken", qs["accessToken"][0])
+		v.Add("accessToken", authResult.AccessToken)
 		http.Redirect(
 			w, r, fmt.Sprintf("%s?%s", qs["origin"][0], v.Encode()),
 			http.StatusSeeOther,
