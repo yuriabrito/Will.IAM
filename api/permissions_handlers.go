@@ -9,12 +9,14 @@ import (
 	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/usecases"
 	"github.com/gorilla/mux"
+	"github.com/topfreegames/extensions/middleware"
 )
 
 func permissionsDeleteHandler(
 	sasUC usecases.ServiceAccounts, psUC usecases.Permissions,
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		l := middleware.GetLogger(r.Context())
 		pID := mux.Vars(r)["id"]
 		p, err := psUC.Get(pID)
 		if err != nil {
@@ -30,6 +32,7 @@ func permissionsDeleteHandler(
 		saID, _ := getServiceAccountID(r.Context())
 		has, err := sasUC.HasPermission(saID, p.ToString())
 		if err != nil {
+			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -39,6 +42,7 @@ func permissionsDeleteHandler(
 		}
 		err = psUC.Delete(pID)
 		if err != nil {
+			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -50,15 +54,18 @@ func permissionsCreatePermissionRequestHandler(
 	sasUC usecases.ServiceAccounts, psUC usecases.Permissions,
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		l := middleware.GetLogger(r.Context())
 		body, err := ioutil.ReadAll(r.Body)
 		defer r.Body.Close()
 		if err != nil {
+			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		pr := &models.PermissionRequest{}
 		err = json.Unmarshal(body, pr)
 		if err != nil {
+			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -66,6 +73,7 @@ func permissionsCreatePermissionRequestHandler(
 		saID, _ := getServiceAccountID(r.Context())
 		has, err := sasUC.HasPermission(saID, pr.ToLenderString())
 		if err != nil {
+			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -89,16 +97,17 @@ func permissionsGetPermissionRequestsHandler(
 	sasUC usecases.ServiceAccounts, psUC usecases.Permissions,
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		l := middleware.GetLogger(r.Context())
 		saID, _ := getServiceAccountID(r.Context())
 		prs, err := psUC.GetPermissionRequests(saID)
 		if err != nil {
-			println(err.Error())
+			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		bts, err := json.Marshal(prs)
 		if err != nil {
-			println(err.Error())
+			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

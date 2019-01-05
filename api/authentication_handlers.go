@@ -7,6 +7,7 @@ import (
 
 	"github.com/ghostec/Will.IAM/oauth2"
 	"github.com/ghostec/Will.IAM/usecases"
+	"github.com/topfreegames/extensions/middleware"
 )
 
 func authenticationBuildURLHandler(
@@ -30,6 +31,7 @@ func authenticationExchangeCodeHandler(
 	provider oauth2.Provider,
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		l := middleware.GetLogger(r.Context())
 		qs := r.URL.Query()
 		if len(qs["code"]) == 0 {
 			w.WriteHeader(http.StatusForbidden)
@@ -38,6 +40,7 @@ func authenticationExchangeCodeHandler(
 		code := qs["code"][0]
 		authResult, err := provider.ExchangeCode(code)
 		if err != nil {
+			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -58,6 +61,7 @@ func authenticationValidHandler(
 	provider oauth2.Provider, sasUC usecases.ServiceAccounts,
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		l := middleware.GetLogger(r.Context())
 		qs := r.URL.Query()
 		if len(qs["origin"]) == 0 {
 			Write(
@@ -75,7 +79,7 @@ func authenticationValidHandler(
 		}
 		authResult, err := sasUC.AuthenticateAccessToken(qs["accessToken"][0])
 		if err != nil {
-			// TODO: check if err is non-authorized
+			l.Error(err)
 			v := url.Values{}
 			v.Add("origin", qs["origin"][0])
 			http.Redirect(

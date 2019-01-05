@@ -6,12 +6,14 @@ import (
 	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/usecases"
 	"github.com/gorilla/mux"
+	"github.com/topfreegames/extensions/middleware"
 )
 
 func rolesCreatePermissionHandler(
 	sasUC usecases.ServiceAccounts, rsUC usecases.Roles,
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		l := middleware.GetLogger(r.Context())
 		qs := r.URL.Query()
 		permissionSl := qs["permission"]
 		if len(permissionSl) == 0 {
@@ -28,6 +30,7 @@ func rolesCreatePermissionHandler(
 		saID, _ := getServiceAccountID(r.Context())
 		has, err := sasUC.HasPermission(saID, sameP.ToString())
 		if err != nil {
+			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -43,6 +46,7 @@ func rolesCreatePermissionHandler(
 		}
 		err = rsUC.CreatePermission(rID, &p)
 		if err != nil {
+			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

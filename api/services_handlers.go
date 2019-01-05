@@ -8,12 +8,14 @@ import (
 
 	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/usecases"
+	"github.com/topfreegames/extensions/middleware"
 )
 
 func servicesCreateHandler(
 	servicesUseCase usecases.Services,
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		l := middleware.GetLogger(r.Context())
 		if err := func() error {
 			body, err := ioutil.ReadAll(r.Body)
 			defer r.Body.Close()
@@ -35,7 +37,7 @@ func servicesCreateHandler(
 			}
 			return nil
 		}(); err != nil {
-			println(err.Error())
+			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
