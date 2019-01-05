@@ -100,9 +100,10 @@ func (g *Google) ExchangeCode(code string) (*AuthResult, error) {
 	}, nil
 }
 
-func (g *Google) tokenFromCode(code string) (*models.Token, error) {
-	ecf := g.buildExchangeCodeForm(code)
-	req, err := http.NewRequest("POST", tokenEndpoint, strings.NewReader(ecf))
+func (g *Google) postToTokenEndpoint(
+	urlencoded string,
+) (map[string]interface{}, error) {
+	req, err := http.NewRequest("POST", tokenEndpoint, strings.NewReader(urlencoded))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	if err != nil {
 		return nil, err
@@ -115,6 +116,15 @@ func (g *Google) tokenFromCode(code string) (*models.Token, error) {
 	body, _ := ioutil.ReadAll(res.Body)
 	tmap := map[string]interface{}{}
 	err = json.Unmarshal(body, &tmap)
+	if err != nil {
+		return nil, err
+	}
+	return tmap, nil
+}
+
+func (g *Google) tokenFromCode(code string) (*models.Token, error) {
+	ecf := g.buildExchangeCodeForm(code)
+	tmap, err := g.postToTokenEndpoint(ecf)
 	if err != nil {
 		return nil, err
 	}
@@ -165,11 +175,39 @@ func (g *Google) checkHostedDomain(hd string) bool {
 	return false
 }
 
+func (g *Google) buildRefreshTokenForm(refreshToken string) string {
+	v := url.Values{}
+	v.Add("refresh_token", refreshToken)
+	v.Add("client_id", g.config.ClientID)
+	v.Add("client_secret", g.config.ClientSecret)
+	v.Add("grant_type", "refresh_token")
+	return v.Encode()
+}
+
+func (g *Google) maybeRefresh(t *models.Token) error {
+	if t.Expiry.After(time.Now()) {
+		return nil
+	}
+	rtf := g.buildRefreshTokenForm(t.RefreshToken)
+	tmap, err := g.postToTokenEndpoint(rtf)
+	if err != nil {
+		return err
+	}
+	t.AccessToken = tmap["access_token"].(string)
+	if err = g.tokensRepository.Save(t); err != nil {
+		return err
+	}
+	return nil
+}
+
 // Authenticate verifies if an accessToken is valid and maybe refresh it
 func (g *Google) Authenticate(accessToken string) (*AuthResult, error) {
 	t, err := g.tokensRepository.Get(accessToken)
-	if t == nil {
-		return nil, fmt.Errorf("access token not found")
+	if err != nil {
+		return nil, err
+	}
+	if err = g.maybeRefresh(t); err != nil {
+		return nil, err
 	}
 	if err != nil {
 		return nil, err
