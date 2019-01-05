@@ -186,3 +186,39 @@ func TestPermissionsCreateRequestHandler(t *testing.T) {
 		return
 	}
 }
+
+func TestPermissionsHasHandler(t *testing.T) {
+	beforeEachPermissionsHandlers(t)
+	type hasPermissionTest struct {
+		request        string
+		expectedStatus int
+	}
+	tt := []hasPermissionTest{
+		hasPermissionTest{
+			request:        "/permissions/has",
+			expectedStatus: http.StatusUnprocessableEntity,
+		},
+		hasPermissionTest{
+			request:        "/permissions/has?permission=Service::RL::TestAction::*",
+			expectedStatus: http.StatusForbidden,
+		},
+	}
+
+	saUC := helpers.GetServiceAccountsUseCase(t)
+	sa, err := saUC.CreateKeyPairType("some sa")
+	if err != nil {
+		t.Errorf("Unexpected error %s", err.Error())
+		return
+	}
+	app := helpers.GetApp(t)
+	for _, tt := range tt {
+		req, _ := http.NewRequest("GET", tt.request, nil)
+		req.Header.Set("Authorization", fmt.Sprintf(
+			"KeyPair %s:%s", sa.KeyID, sa.KeySecret,
+		))
+		rec := helpers.DoRequest(t, req, app.GetRouter())
+		if rec.Code != tt.expectedStatus {
+			t.Errorf("Expected %d. Got %d", tt.expectedStatus, rec.Code)
+		}
+	}
+}

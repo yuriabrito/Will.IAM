@@ -11,33 +11,6 @@ import (
 	"github.com/topfreegames/extensions/middleware"
 )
 
-func serviceAccountsHasPermissionHandler(
-	sasUC usecases.ServiceAccounts,
-) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		l := middleware.GetLogger(r.Context())
-		qs := r.URL.Query()
-		permissionSl := qs["permission"]
-		if len(permissionSl) == 0 {
-			Write(w, http.StatusUnprocessableEntity, `{"error": "querystrings.permission is required"}`)
-			return
-		}
-		saID, _ := getServiceAccountID(r.Context())
-		has, err :=
-			sasUC.HasPermission(saID, permissionSl[0])
-		if err != nil {
-			l.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		if !has {
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-	}
-}
-
 func serviceAccountsGetHandler(
 	sasUC usecases.ServiceAccounts,
 ) func(http.ResponseWriter, *http.Request) {

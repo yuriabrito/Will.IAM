@@ -133,14 +133,6 @@ func (a *App) GetRouter() *mux.Router {
 	authMiddle := authMiddleware(serviceAccountsUseCase)
 
 	r.Handle(
-		"/service_accounts/me/permissions/has",
-		authMiddle(http.HandlerFunc(
-			serviceAccountsHasPermissionHandler(serviceAccountsUseCase),
-		)),
-	).
-		Methods("GET").Name("serviceAccountsHasPermission")
-
-	r.Handle(
 		"/services",
 		authMiddle(http.HandlerFunc(
 			servicesCreateHandler(servicesUseCase),
@@ -189,6 +181,14 @@ func (a *App) GetRouter() *mux.Router {
 		))),
 	).
 		Methods("GET").Name("permissionsGetPermissionRequestsHandler")
+
+	r.Handle(
+		"/permissions/has",
+		authMiddle(http.HandlerFunc(
+			permissionsHasHandler(serviceAccountsUseCase),
+		)),
+	).
+		Methods("GET").Name("permissionsHasHandler")
 
 	r.Handle(
 		"/permissions/requests",
