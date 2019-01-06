@@ -96,3 +96,8 @@ func authenticationValidHandler(
 		)
 	}
 }
+
+func authenticationHandler(w http.ResponseWriter, r *http.Request) {
+	// Work is in authMiddleware
+	w.WriteHeader(200)
+}

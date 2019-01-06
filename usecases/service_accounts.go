@@ -19,6 +19,7 @@ type ServiceAccounts interface {
 	GetPermissions(string) ([]models.Permission, error)
 	CreatePermission(string, *models.Permission) error
 	Get(string) (*models.ServiceAccount, error)
+	List() ([]models.ServiceAccount, error)
 	GetRoles(string) ([]models.Role, error)
 }
 
@@ -98,11 +99,21 @@ func (sas serviceAccounts) Get(
 	return sa, nil
 }
 
+// List returns a list of all service accounts
+func (sas serviceAccounts) List() ([]models.ServiceAccount, error) {
+	saSl, err := sas.serviceAccountsRepository.List()
+	if err != nil {
+		return nil, err
+	}
+	return saSl, nil
+}
+
 // AccessTokenAuth stores a ServiceAccountID and the (maybe refreshed)
 // AccessToken
 type AccessTokenAuth struct {
 	ServiceAccountID string
 	AccessToken      string
+	Email            string
 }
 
 // AuthenticateAccessToken verifies if token is valid for email, and sometimes refreshes it
@@ -132,6 +143,7 @@ func (sas *serviceAccounts) AuthenticateAccessToken(
 	return &AccessTokenAuth{
 		ServiceAccountID: sa.ID,
 		AccessToken:      authResult.AccessToken,
+		Email:            authResult.Email,
 	}, nil
 }
 

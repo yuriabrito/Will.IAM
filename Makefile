@@ -44,7 +44,7 @@ build-docker:
 	@docker build -t $(project) .
 
 run:
-	@gin -i --port 3001 --appPort 8080 --bin Will.IAM run start-api
+	@gin -i --port 3001 --appPort 4040 --bin Will.IAM run start-api
 
 setup-migrate:
 	@go get -u -d github.com/mattes/migrate/cli github.com/lib/pq

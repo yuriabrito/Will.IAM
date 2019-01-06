@@ -132,7 +132,7 @@ func (g *Google) tokenFromCode(code string) (*models.Token, error) {
 		AccessToken:  tmap["access_token"].(string),
 		RefreshToken: tmap["refresh_token"].(string),
 		TokenType:    tmap["token_type"].(string),
-		Expiry: time.Now().Add(
+		Expiry: time.Now().UTC().Add(
 			time.Second * time.Duration(tmap["expires_in"].(float64)),
 		),
 	}, nil
@@ -185,7 +185,7 @@ func (g *Google) buildRefreshTokenForm(refreshToken string) string {
 }
 
 func (g *Google) maybeRefresh(t *models.Token) error {
-	if t.Expiry.After(time.Now()) {
+	if t.Expiry.After(time.Now().UTC()) {
 		return nil
 	}
 	rtf := g.buildRefreshTokenForm(t.RefreshToken)
@@ -194,6 +194,9 @@ func (g *Google) maybeRefresh(t *models.Token) error {
 		return err
 	}
 	t.AccessToken = tmap["access_token"].(string)
+	t.Expiry = time.Now().UTC().Add(
+		time.Second * time.Duration(tmap["expires_in"].(float64)),
+	)
 	if err = g.tokensRepository.Save(t); err != nil {
 		return err
 	}

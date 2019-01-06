@@ -81,3 +81,24 @@ func serviceAccountsCreateHandler(
 		w.WriteHeader(http.StatusCreated)
 	}
 }
+
+func serviceAccountsListHandler(
+	sasUC usecases.ServiceAccounts,
+) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		l := middleware.GetLogger(r.Context())
+		sa, err := sasUC.Get("asdf")
+		if err != nil {
+			l.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		data := map[string]string{
+			"id":         sa.ID,
+			"name":       sa.Name,
+			"baseRoleId": sa.BaseRoleID,
+		}
+		bts, err := json.Marshal(data)
+		WriteBytes(w, 200, bts)
+	}
+}

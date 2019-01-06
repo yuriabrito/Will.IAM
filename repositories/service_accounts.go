@@ -9,6 +9,7 @@ import (
 // ServiceAccounts repository
 type ServiceAccounts interface {
 	Get(string) (*models.ServiceAccount, error)
+	List() ([]models.ServiceAccount, error)
 	ForEmail(string) (*models.ServiceAccount, error)
 	ForKeyPair(string, string) (*models.ServiceAccount, error)
 	Create(*models.ServiceAccount) error
@@ -30,6 +31,17 @@ func (sas serviceAccounts) Get(id string) (*models.ServiceAccount, error) {
 		return nil, err
 	}
 	return sa, nil
+}
+
+func (sas serviceAccounts) List() ([]models.ServiceAccount, error) {
+	var saSl []models.ServiceAccount
+	if _, err := sas.storage.PG.DB.Query(
+		saSl,
+		"SELECT id, name, email FROM service_accounts",
+	); err != nil {
+		return nil, err
+	}
+	return saSl, nil
 }
 
 // ForEmail retrieves Service Account corresponding

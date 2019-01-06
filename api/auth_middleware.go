@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/ghostec/Will.IAM/usecases"
+	"github.com/topfreegames/extensions/middleware"
 )
 
 type serviceAccountIDCtxKeyType string
@@ -34,10 +35,12 @@ func authMiddleware(
 				return
 			}
 			var ctx context.Context
+			l := middleware.GetLogger(r.Context())
 			if parts[0] == "KeyPair" {
 				keyPair := strings.Split(parts[1], ":")
 				saID, err := saUseCase.AuthenticateKeyPair(keyPair[0], keyPair[1])
 				if err != nil {
+					l.Error(err)
 					w.WriteHeader(http.StatusInternalServerError)
 					return
 				}
@@ -46,9 +49,15 @@ func authMiddleware(
 				accessToken := parts[1]
 				accessTokenAuth, err := saUseCase.AuthenticateAccessToken(accessToken)
 				if err != nil {
+					if err.Error() == "access token not found" {
+						w.WriteHeader(http.StatusUnauthorized)
+						return
+					}
+					l.Error(err)
 					w.WriteHeader(http.StatusInternalServerError)
 					return
 				}
+				w.Header().Set("x-email", accessTokenAuth.Email)
 				w.Header().Set("x-access-token", accessTokenAuth.AccessToken)
 				ctx = context.WithValue(
 					r.Context(), serviceAccountIDCtxKey, accessTokenAuth.ServiceAccountID,

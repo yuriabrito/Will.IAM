@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/ghostec/Will.IAM/constants"
+	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/oauth2"
 	"github.com/ghostec/Will.IAM/repositories"
 	"github.com/ghostec/Will.IAM/usecases"
@@ -124,13 +125,17 @@ func (a *App) GetRouter() *mux.Router {
 		authenticationValidHandler(a.oauth2Provider, serviceAccountsUseCase),
 	).Methods("GET").Name("ssoAuthValid")
 
-	r.PathPrefix("/sso").Handler(http.StripPrefix("/sso", http.FileServer(
-		http.Dir("./assets/sso/")),
-	)).Methods("GET").Name("sso")
-
 	servicesRepo := repositories.NewServices(a.storage)
 	servicesUseCase := usecases.NewServices(servicesRepo, serviceAccountsUseCase)
 	authMiddle := authMiddleware(serviceAccountsUseCase)
+
+	r.Handle("/sso/auth",
+		authMiddle(http.HandlerFunc(authenticationHandler)),
+	).Methods("GET").Name("ssoAuth")
+
+	r.PathPrefix("/sso").Handler(http.StripPrefix("/sso", http.FileServer(
+		http.Dir("./assets/sso/")),
+	)).Methods("GET").Name("sso")
 
 	r.Handle(
 		"/services",
@@ -155,6 +160,18 @@ func (a *App) GetRouter() *mux.Router {
 		)),
 	).
 		Methods("POST").Name("serviceAccountsCreateHandler")
+
+	hasPermissionMiddle := hasPermissionMiddlewareBuilder(serviceAccountsUseCase)
+
+	r.Handle(
+		"/service_accounts",
+		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionStr(
+			models.OwnershipLevels.Lender, "ListServiceAccounts", "*",
+		), http.HandlerFunc(
+			serviceAccountsListHandler(serviceAccountsUseCase),
+		))),
+	).
+		Methods("GET").Name("serviceAccountsListHandler")
 
 	rolesUseCase := usecases.NewRoles(rolesRepo, permissionsRepo)
 

@@ -28,6 +28,6 @@ var port int
 
 func init() {
 	startAPICmd.Flags().StringVarP(&bind, "host", "b", "0.0.0.0", "bind address")
-	startAPICmd.Flags().IntVarP(&port, "port", "p", 8080, "bind port")
+	startAPICmd.Flags().IntVarP(&port, "port", "p", 4040, "bind port")
 	RootCmd.AddCommand(startAPICmd)
 }

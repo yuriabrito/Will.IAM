@@ -36,7 +36,7 @@ func (ts tokens) Save(token *models.Token) error {
 	refresh_token, sso_access_token, token_type, expiry, email, updated_at)
 	VALUES (?access_token, ?refresh_token, ?sso_access_token, ?token_type,
 	?expiry, ?email, now()) ON CONFLICT (refresh_token) DO UPDATE SET
-	access_token = ?access_token`, token)
+	access_token = ?access_token, expiry = ?expiry`, token)
 	return err
 }
 
