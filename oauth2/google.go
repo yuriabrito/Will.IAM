@@ -215,11 +215,6 @@ func (g *Google) Authenticate(accessToken string) (*AuthResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, err = g.getUserInfo(t.AccessToken)
-	if err != nil {
-		return nil, err
-	}
-	// TODO: handle refresh
 	return &AuthResult{
 		AccessToken: t.AccessToken,
 		Email:       t.Email,
