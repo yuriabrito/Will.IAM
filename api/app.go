@@ -11,6 +11,7 @@ import (
 	"github.com/ghostec/Will.IAM/repositories"
 	"github.com/ghostec/Will.IAM/usecases"
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/topfreegames/extensions/middleware"
@@ -68,7 +69,11 @@ func (a *App) configureApp() error {
 
 func (a *App) configureServer() {
 	a.router = a.GetRouter()
-	a.server = &http.Server{Addr: a.address, Handler: wrapHandlerWithResponseWriter(a.router)}
+	handler := cors.AllowAll().Handler(a.router)
+	a.server = &http.Server{
+		Addr:    a.address,
+		Handler: wrapHandlerWithResponseWriter(handler),
+	}
 }
 
 func (a *App) configurePG() error {
@@ -145,6 +150,18 @@ func (a *App) GetRouter() *mux.Router {
 	).
 		Methods("POST").Name("servicesCreateHandler")
 
+	hasPermissionMiddle := hasPermissionMiddlewareBuilder(serviceAccountsUseCase)
+
+	r.Handle(
+		"/service_accounts",
+		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionStr(
+			models.OwnershipLevels.Lender, "ListServiceAccounts", "*",
+		), http.HandlerFunc(
+			serviceAccountsListHandler(serviceAccountsUseCase),
+		))),
+	).
+		Methods("GET").Name("serviceAccountsListHandler")
+
 	r.Handle(
 		"/service_accounts/{id}",
 		authMiddle(http.HandlerFunc(
@@ -160,18 +177,6 @@ func (a *App) GetRouter() *mux.Router {
 		)),
 	).
 		Methods("POST").Name("serviceAccountsCreateHandler")
-
-	hasPermissionMiddle := hasPermissionMiddlewareBuilder(serviceAccountsUseCase)
-
-	r.Handle(
-		"/service_accounts",
-		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionStr(
-			models.OwnershipLevels.Lender, "ListServiceAccounts", "*",
-		), http.HandlerFunc(
-			serviceAccountsListHandler(serviceAccountsUseCase),
-		))),
-	).
-		Methods("GET").Name("serviceAccountsListHandler")
 
 	rolesUseCase := usecases.NewRoles(rolesRepo, permissionsRepo)
 

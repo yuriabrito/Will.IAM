@@ -176,6 +176,14 @@
   version = "v0.8.0"
 
 [[projects]]
+  digest = "1:5f47c69f85311c4dc292be6cc995a0a3fe8337a6ce38ef4f71e5b7efd5ad42e0"
+  name = "github.com/rs/cors"
+  packages = ["."]
+  pruneopts = ""
+  revision = "9a47f48565a795472d43519dd49aac781f3034fb"
+  version = "v1.6.0"
+
+[[projects]]
   digest = "1:7f569d906bdd20d906b606415b7d794f798f91a62fcfb6a4daa6d50690fb7a3f"
   name = "github.com/satori/go.uuid"
   packages = ["."]
@@ -385,6 +393,7 @@
     "github.com/go-pg/pg",
     "github.com/gofrs/uuid",
     "github.com/gorilla/mux",
+    "github.com/rs/cors",
     "github.com/sirupsen/logrus",
     "github.com/spf13/cobra",
     "github.com/spf13/viper",

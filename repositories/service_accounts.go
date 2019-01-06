@@ -36,7 +36,7 @@ func (sas serviceAccounts) Get(id string) (*models.ServiceAccount, error) {
 func (sas serviceAccounts) List() ([]models.ServiceAccount, error) {
 	var saSl []models.ServiceAccount
 	if _, err := sas.storage.PG.DB.Query(
-		saSl,
+		&saSl,
 		"SELECT id, name, email FROM service_accounts",
 	); err != nil {
 		return nil, err

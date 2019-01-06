@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/ghostec/Will.IAM/usecases"
-	"github.com/gorilla/mux"
 	"github.com/topfreegames/extensions/middleware"
 )
 
@@ -14,7 +13,12 @@ func hasPermissionMiddlewareBuilder(
 	return func(permission string, next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			l := middleware.GetLogger(r.Context())
-			saID := mux.Vars(r)["id"]
+			saID, ok := getServiceAccountID(r.Context())
+			if !ok {
+				l.Error("No ServiceAccountID in r.Context()")
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
 			has, err := sasUC.HasPermission(saID, permission)
 			if err != nil {
 				l.Error(err)
