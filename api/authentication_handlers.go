@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/ghostec/Will.IAM/oauth2"
 	"github.com/ghostec/Will.IAM/usecases"
@@ -15,14 +16,14 @@ func authenticationBuildURLHandler(
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		qs := r.URL.Query()
-		if len(qs["origin"]) == 0 {
+		if len(qs["referer"]) == 0 {
 			Write(
 				w, http.StatusUnprocessableEntity,
-				`{ "error": "querystrings.origin is required" }`,
+				`{ "error": "querystrings.referer is required" }`,
 			)
 			return
 		}
-		authURL := provider.BuildAuthURL(qs["origin"][0])
+		authURL := provider.BuildAuthURL(qs["referer"][0])
 		http.Redirect(w, r, authURL, http.StatusSeeOther)
 	}
 }
@@ -48,7 +49,7 @@ func authenticationExchangeCodeHandler(
 			v := url.Values{}
 			v.Add("accessToken", authResult.AccessToken)
 			v.Add("email", authResult.Email)
-			v.Add("origin", qs["state"][0])
+			v.Add("referer", qs["state"][0])
 			redirectTo := fmt.Sprintf("/sso?%s", v.Encode())
 			http.Redirect(w, r, redirectTo, http.StatusSeeOther)
 			return
@@ -63,10 +64,10 @@ func authenticationValidHandler(
 	return func(w http.ResponseWriter, r *http.Request) {
 		l := middleware.GetLogger(r.Context())
 		qs := r.URL.Query()
-		if len(qs["origin"]) == 0 {
+		if len(qs["referer"]) == 0 {
 			Write(
 				w, http.StatusUnprocessableEntity,
-				`{ "error": "querystrings.origin is required" }`,
+				`{ "error": "querystrings.referer is required" }`,
 			)
 			return
 		}
@@ -81,17 +82,21 @@ func authenticationValidHandler(
 		if err != nil {
 			l.Error(err)
 			v := url.Values{}
-			v.Add("origin", qs["origin"][0])
+			v.Add("referer", qs["referer"][0])
 			http.Redirect(
 				w, r, fmt.Sprintf("/sso/auth/do?%s", v.Encode()), http.StatusSeeOther,
 			)
 			return
 		}
 		v := url.Values{}
-		v.Add("origin", qs["origin"][0])
+		v.Add("referer", qs["referer"][0])
 		v.Add("accessToken", authResult.AccessToken)
+		sep := "?"
+		if strings.Contains(qs["referer"][0], "?") {
+			sep = "&"
+		}
 		http.Redirect(
-			w, r, fmt.Sprintf("%s?%s", qs["origin"][0], v.Encode()),
+			w, r, fmt.Sprintf("%s%s%s", qs["referer"][0], sep, v.Encode()),
 			http.StatusSeeOther,
 		)
 	}

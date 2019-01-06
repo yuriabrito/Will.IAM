@@ -69,7 +69,14 @@ func (a *App) configureApp() error {
 
 func (a *App) configureServer() {
 	a.router = a.GetRouter()
-	handler := cors.AllowAll().Handler(a.router)
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"HEAD", "GET", "POST", "PUT", "PATCH", "DELETE"},
+		AllowedHeaders:   []string{"*"},
+		ExposedHeaders:   []string{"x-access-token", "x-email"},
+		AllowCredentials: false,
+	})
+	handler := c.Handler(a.router)
 	a.server = &http.Server{
 		Addr:    a.address,
 		Handler: wrapHandlerWithResponseWriter(handler),

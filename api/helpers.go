@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"reflect"
 )
 
 func keepJSONFieldsSl(
@@ -25,12 +26,37 @@ func keepJSONFieldsSl(
 	return kmSl, nil
 }
 
-func keepJSONFieldsSlBytes(
-	isl interface{}, keep ...string,
-) ([]byte, error) {
-	m, err := keepJSONFieldsSl(isl, keep...)
+func keepJSONFieldsOne(
+	i interface{}, keep ...string,
+) (map[string]interface{}, error) {
+	bts, err := json.Marshal(i)
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(m)
+	var m map[string]interface{}
+	if err := json.Unmarshal(bts, &m); err != nil {
+		return nil, err
+	}
+	km := map[string]interface{}{}
+	for _, f := range keep {
+		km[f] = m[f]
+	}
+	return km, nil
+}
+
+func keepJSONFields(i interface{}, keep ...string) (interface{}, error) {
+	switch reflect.TypeOf(i).Kind() {
+	case reflect.Slice:
+		return keepJSONFieldsSl(i, keep...)
+	default:
+		return keepJSONFieldsOne(i, keep...)
+	}
+}
+
+func keepJSONFieldsBytes(i interface{}, keep ...string) ([]byte, error) {
+	ri, err := keepJSONFields(i, keep...)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(ri)
 }

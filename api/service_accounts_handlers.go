@@ -93,7 +93,7 @@ func serviceAccountsListHandler(
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		bts, err := keepJSONFieldsSlBytes(saSl, "id", "name", "email")
+		bts, err := keepJSONFieldsBytes(saSl, "id", "name", "email")
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)

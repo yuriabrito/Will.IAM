@@ -27,15 +27,15 @@
       const urlParams = new URLSearchParams(window.location.search);
       const accessToken = urlParams.get('accessToken')
         || localStorage.getItem('accessToken');
-      const origin = urlParams.get('origin');
+      const referer = urlParams.get('referer');
       if (accessToken) {
-        const origin = urlParams.get('origin')
+        const referer = urlParams.get('referer')
         localStorage.setItem('accessToken', accessToken);
         window.location.href = '/sso/auth/valid?accessToken='
-          + encodeURIComponent(accessToken) + '&origin='
-        + encodeURIComponent(origin);
+          + encodeURIComponent(accessToken) + '&referer='
+        + encodeURIComponent(referer);
       } else {
-        window.location.href = '/sso/auth/do?origin=' + encodeURIComponent(origin);
+        window.location.href = '/sso/auth/do?referer=' + encodeURIComponent(referer);
       }
     </script>
   </body>
