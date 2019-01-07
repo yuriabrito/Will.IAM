@@ -10,6 +10,7 @@ RUN cd /go/src/github.com/ghostec/Will.IAM && \
   make build && \
   mv bin/Will.IAM /app/Will.IAM && \
   mv config /app/config && \
+  mv assets /app/assets && \
   mv Makefile /app/Makefile
   
 WORKDIR /app
