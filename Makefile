@@ -14,7 +14,7 @@ setup-gin:
 	@go get github.com/codegangsta/gin
 
 setup-project:
-	@go get -u github.com/golang/dep...
+	@go get -u github.com/golang/dep/cmd/dep
 	@dep ensure
 
 deps:
