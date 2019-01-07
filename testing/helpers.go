@@ -32,12 +32,12 @@ func GetConfig(t *testing.T, path ...string) *viper.Viper {
 // GetLogger gets config for tests
 func GetLogger(t *testing.T) logrus.FieldLogger {
 	t.Helper()
-	return utils.GetLogger("0.0.0.0", 8080, 0, true)
+	return utils.GetLogger("0.0.0.0", 4040, 0, true)
 }
 
 // GetApp is a helper to create an *api.App
 func GetApp(t *testing.T) *api.App {
-	app, err := api.NewApp("0.0.0.0", 8080, GetConfig(t), GetLogger(t), nil)
+	app, err := api.NewApp("0.0.0.0", 4040, GetConfig(t), GetLogger(t), nil)
 	app.SetOAuth2Provider(oauth2.NewProviderBlankMock())
 	if err != nil {
 		t.Fatal(err)

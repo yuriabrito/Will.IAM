@@ -14,6 +14,6 @@ RUN cd /go/src/github.com/ghostec/Will.IAM && \
   
 WORKDIR /app
 
-EXPOSE 8080
+EXPOSE 4040
 
 CMD /app/Will.IAM start-api
