@@ -125,20 +125,21 @@ func (sas *serviceAccounts) AuthenticateAccessToken(
 		return nil, err
 	}
 	sa, err := sas.serviceAccountsRepository.ForEmail(authResult.Email)
-	if err != nil {
-		// TODO: use better errors
-		if err.Error() == fmt.Sprintf(
-			"Service Account not found for email %s", authResult.Email,
-		) {
-			sa = &models.ServiceAccount{
-				Name:  authResult.Email,
-				Email: authResult.Email,
-			}
-			if err = sas.Create(sa); err != nil {
-				return nil, err
-			}
-		}
+	// TODO: use better errors
+	saNotFoundErr := fmt.Sprintf(
+		"Service Account not found for email %s", authResult.Email,
+	)
+	if err != nil && err.Error() != saNotFoundErr {
 		return nil, err
+	}
+	if err != nil && err.Error() == saNotFoundErr {
+		sa = &models.ServiceAccount{
+			Name:  authResult.Email,
+			Email: authResult.Email,
+		}
+		if err = sas.Create(sa); err != nil {
+			return nil, err
+		}
 	}
 	return &AccessTokenAuth{
 		ServiceAccountID: sa.ID,
