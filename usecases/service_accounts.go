@@ -50,7 +50,8 @@ func (sas serviceAccounts) Create(sa *models.ServiceAccount) error {
 	// TODO: pass tx to repo create -> service_accounts + roles + role_bindings
 	sa.ID = uuid.Must(uuid.NewV4()).String()
 	r := &models.Role{
-		Name: fmt.Sprintf("service-account:%s", sa.ID),
+		Name:       fmt.Sprintf("service-account:%s", sa.ID),
+		IsBaseRole: true,
 	}
 	if err := sas.rolesRepository.Create(r); err != nil {
 		return err

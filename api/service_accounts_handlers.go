@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/usecases"
 	"github.com/gorilla/mux"
 	"github.com/topfreegames/extensions/middleware"
@@ -43,21 +42,6 @@ func serviceAccountsCreateHandler(
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		l := middleware.GetLogger(r.Context())
-		saID, _ := getServiceAccountID(r.Context())
-		has, err := sasUC.HasPermission(
-			saID, models.BuildWillIAMPermissionStr(
-				models.OwnershipLevels.Lender, "CreateServiceAccount", "*",
-			),
-		)
-		if err != nil {
-			l.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		if !has {
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
 		body, err := ioutil.ReadAll(r.Body)
 		defer r.Body.Close()
 		if err != nil {

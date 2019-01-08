@@ -1,6 +1,8 @@
 package api
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/ghostec/Will.IAM/models"
@@ -45,6 +47,58 @@ func rolesCreatePermissionHandler(
 			return
 		}
 		err = rsUC.CreatePermission(rID, &p)
+		if err != nil {
+			l.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
+	}
+}
+
+func rolesListHandler(
+	rsUC usecases.Roles,
+) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		l := middleware.GetLogger(r.Context())
+		rsSl, err := rsUC.List()
+		if err != nil {
+			l.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		bts, err := keepJSONFieldsBytes(rsSl, "id", "name")
+		if err != nil {
+			l.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		WriteBytes(w, 200, bts)
+	}
+}
+
+func rolesCreateHandler(
+	rsUC usecases.Roles,
+) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		l := middleware.GetLogger(r.Context())
+		body, err := ioutil.ReadAll(r.Body)
+		defer r.Body.Close()
+		if err != nil {
+			l.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		m := map[string]interface{}{}
+		err = json.Unmarshal(body, &m)
+		name, ok := m["name"].(string)
+		if !ok || name == "" {
+			Write(w, http.StatusUnprocessableEntity,
+				`{ "error": { "name": "required" } }`)
+			return
+		}
+		role := &models.Role{Name: name, IsBaseRole: false}
+		err = rsUC.Create(role)
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)

@@ -9,6 +9,7 @@ type Roles interface {
 	ForServiceAccountID(string) ([]models.Role, error)
 	Create(*models.Role) error
 	Bind(models.Role, models.ServiceAccount) error
+	List() ([]models.Role, error)
 }
 
 type roles struct {
@@ -32,7 +33,8 @@ func (rs roles) ForServiceAccountID(serviceAccountID string) ([]models.Role, err
 
 func (rs roles) Create(r *models.Role) error {
 	_, err := rs.storage.PG.DB.Query(
-		r, "INSERT INTO roles (name) VALUES (?name) RETURNING id", r,
+		r, `INSERT INTO roles (name, is_base_role) VALUES (?name, ?is_base_role)
+		RETURNING id`, r,
 	)
 	return err
 }
@@ -47,6 +49,16 @@ func (rs roles) Bind(r models.Role, sa models.ServiceAccount) error {
 		VALUES (?role_id, ?service_account_id)`, rb,
 	)
 	return err
+}
+
+func (rs roles) List() ([]models.Role, error) {
+	var rsSl []models.Role
+	if _, err := rs.storage.PG.DB.Query(
+		&rsSl, "SELECT id, name FROM roles WHERE is_base_role = false",
+	); err != nil {
+		return nil, err
+	}
+	return rsSl, nil
 }
 
 // NewRoles roles ctor

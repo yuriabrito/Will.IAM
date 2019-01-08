@@ -179,9 +179,11 @@ func (a *App) GetRouter() *mux.Router {
 
 	r.Handle(
 		"/service_accounts",
-		authMiddle(http.HandlerFunc(
+		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionStr(
+			models.OwnershipLevels.Lender, "CreateServiceAccount", "*",
+		), http.HandlerFunc(
 			serviceAccountsCreateHandler(serviceAccountsUseCase),
-		)),
+		))),
 	).
 		Methods("POST").Name("serviceAccountsCreateHandler")
 
@@ -194,6 +196,26 @@ func (a *App) GetRouter() *mux.Router {
 		)),
 	).
 		Methods("POST").Name("rolesCreatePermissionHandler")
+
+	r.Handle(
+		"/roles",
+		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionStr(
+			models.OwnershipLevels.Lender, "ListRoles", "*",
+		), http.HandlerFunc(
+			rolesListHandler(rolesUseCase),
+		))),
+	).
+		Methods("GET").Name("rolesListHandler")
+
+	r.Handle(
+		"/roles",
+		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionStr(
+			models.OwnershipLevels.Lender, "CreateRole", "*",
+		), http.HandlerFunc(
+			rolesCreateHandler(rolesUseCase),
+		))),
+	).
+		Methods("POST").Name("rolesCreateHandler")
 
 	r.Handle(
 		"/permissions/{id}",

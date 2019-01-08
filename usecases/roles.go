@@ -10,6 +10,7 @@ type Roles interface {
 	Create(r *models.Role) error
 	CreatePermission(string, *models.Permission) error
 	GetPermissions(string) ([]models.Permission, error)
+	List() ([]models.Role, error)
 }
 
 type roles struct {
@@ -29,6 +30,10 @@ func (rs roles) CreatePermission(roleID string, p *models.Permission) error {
 func (rs roles) GetPermissions(roleID string) ([]models.Permission, error) {
 	r := models.Role{ID: roleID}
 	return rs.permissionsRepository.ForRoles([]models.Role{r})
+}
+
+func (rs roles) List() ([]models.Role, error) {
+	return rs.rolesRepository.List()
 }
 
 // NewRoles ctor

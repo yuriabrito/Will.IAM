@@ -2,8 +2,9 @@ package models
 
 // Role type
 type Role struct {
-	ID   string `json:"id" pg:"id"`
-	Name string `json:"name" pg:"name"`
+	ID         string `json:"id" pg:"id"`
+	Name       string `json:"name" pg:"name"`
+	IsBaseRole bool   `json:"isBaseRole" pg:"is_base_role" sql:",notnull"`
 	// Should change updatedAt when a permission is created for role
 	CreatedUpdatedAt
 }
