@@ -4,6 +4,7 @@ package oauth2
 type AuthResult struct {
 	AccessToken string `json:"accessToken"`
 	Email       string `json:"email"`
+	Picture     string `json:"picture"`
 }
 
 // Provider is the contract any OAuth2 implementation must follow

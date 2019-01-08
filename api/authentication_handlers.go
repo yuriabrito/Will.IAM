@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/oauth2"
 	"github.com/ghostec/Will.IAM/usecases"
 	"github.com/topfreegames/extensions/middleware"
@@ -29,12 +30,16 @@ func authenticationBuildURLHandler(
 }
 
 func authenticationExchangeCodeHandler(
-	provider oauth2.Provider,
+	provider oauth2.Provider, sasUC usecases.ServiceAccounts,
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		l := middleware.GetLogger(r.Context())
 		qs := r.URL.Query()
 		if len(qs["code"]) == 0 {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		if len(qs["state"]) == 0 {
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
@@ -45,16 +50,22 @@ func authenticationExchangeCodeHandler(
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		if len(qs["state"]) != 0 {
-			v := url.Values{}
-			v.Add("accessToken", authResult.AccessToken)
-			v.Add("email", authResult.Email)
-			v.Add("referer", qs["state"][0])
-			redirectTo := fmt.Sprintf("/sso?%s", v.Encode())
-			http.Redirect(w, r, redirectTo, http.StatusSeeOther)
+		sa := &models.ServiceAccount{
+			Name:    authResult.Email,
+			Email:   authResult.Email,
+			Picture: authResult.Picture,
+		}
+		if err = sasUC.Create(sa); err != nil {
+			l.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		Write(w, http.StatusOK, "")
+		v := url.Values{}
+		v.Add("accessToken", authResult.AccessToken)
+		v.Add("email", authResult.Email)
+		v.Add("referer", qs["state"][0])
+		redirectTo := fmt.Sprintf("/sso?%s", v.Encode())
+		http.Redirect(w, r, redirectTo, http.StatusSeeOther)
 	}
 }
 

@@ -97,6 +97,7 @@ func (g *Google) ExchangeCode(code string) (*AuthResult, error) {
 	return &AuthResult{
 		AccessToken: t.AccessToken,
 		Email:       t.Email,
+		Picture:     userInfo.Picture,
 	}, nil
 }
 
@@ -141,6 +142,7 @@ func (g *Google) tokenFromCode(code string) (*models.Token, error) {
 type userInfo struct {
 	Email        string `json:"email"`
 	HostedDomain string `json:"hd"`
+	Picture      string `json:"picture"`
 }
 
 func (g *Google) getUserInfo(accessToken string) (*userInfo, error) {
@@ -184,23 +186,27 @@ func (g *Google) buildRefreshTokenForm(refreshToken string) string {
 	return v.Encode()
 }
 
-func (g *Google) maybeRefresh(t *models.Token) error {
+func (g *Google) maybeRefresh(t *models.Token) (*userInfo, error) {
 	if t.Expiry.After(time.Now().UTC()) {
-		return nil
+		return nil, nil
 	}
 	rtf := g.buildRefreshTokenForm(t.RefreshToken)
 	tmap, err := g.postToTokenEndpoint(rtf)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	t.AccessToken = tmap["access_token"].(string)
 	t.Expiry = time.Now().UTC().Add(
 		time.Second * time.Duration(tmap["expires_in"].(float64)),
 	)
-	if err = g.tokensRepository.Save(t); err != nil {
-		return err
+	userInfo, err := g.getUserInfo(t.AccessToken)
+	if err != nil {
+		return nil, err
 	}
-	return nil
+	if err = g.tokensRepository.Save(t); err != nil {
+		return nil, err
+	}
+	return userInfo, nil
 }
 
 // Authenticate verifies if an accessToken is valid and maybe refresh it
@@ -209,16 +215,21 @@ func (g *Google) Authenticate(accessToken string) (*AuthResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = g.maybeRefresh(t); err != nil {
+	var userInfo *userInfo
+	if userInfo, err = g.maybeRefresh(t); err != nil {
 		return nil, err
 	}
 	if err != nil {
 		return nil, err
 	}
-	return &AuthResult{
+	authResult := &AuthResult{
 		AccessToken: t.AccessToken,
 		Email:       t.Email,
-	}, nil
+	}
+	if userInfo != nil {
+		authResult.Picture = userInfo.Picture
+	}
+	return authResult, nil
 }
 
 // NewGoogle ctor

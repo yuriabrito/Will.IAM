@@ -9,6 +9,7 @@ type ServiceAccount struct {
 	KeyID      string `json:"keyId" pg:"key_id"`
 	KeySecret  string `json:"keySecret" pg:"key_secret"`
 	Email      string `json:"email" pg:"email"`
+	Picture    string `json:"picture" pg:"picture"`
 	BaseRoleID string `json:"baseRoleId" pg:"base_role_id"`
 	CreatedUpdatedAt
 }

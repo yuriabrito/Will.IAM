@@ -37,7 +37,8 @@ func (sas serviceAccounts) List() ([]models.ServiceAccount, error) {
 	var saSl []models.ServiceAccount
 	if _, err := sas.storage.PG.DB.Query(
 		&saSl,
-		"SELECT id, name, email FROM service_accounts",
+		`SELECT id, name, email, picture FROM service_accounts
+		ORDER BY created_at DESC`,
 	); err != nil {
 		return nil, err
 	}
@@ -83,7 +84,8 @@ func (sas serviceAccounts) Create(sa *models.ServiceAccount) error {
 	_, err := sas.storage.PG.DB.Query(
 		sa, `INSERT INTO service_accounts (id, name, email, key_id, key_secret,
 		base_role_id) VALUES (?id, ?name, ?email, ?key_id, ?key_secret,
-		?base_role_id) RETURNING id`, sa,
+		?base_role_id) ON CONFLICT (email) DO UPDATE
+		SET picture = ?picture, updated_at = now() RETURNING id`, sa,
 	)
 	return err
 }

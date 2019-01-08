@@ -121,10 +121,6 @@ func (a *App) GetRouter() *mux.Router {
 		authenticationBuildURLHandler(a.oauth2Provider),
 	).Methods("GET").Name("ssoAuthDo")
 
-	r.HandleFunc("/sso/auth/done",
-		authenticationExchangeCodeHandler(a.oauth2Provider),
-	).Methods("GET").Name("ssoAuthDone")
-
 	serviceAccountsRepo := repositories.NewServiceAccounts(a.storage)
 	rolesRepo := repositories.NewRoles(a.storage)
 	permissionsRepo := repositories.NewPermissions(a.storage)
@@ -132,6 +128,10 @@ func (a *App) GetRouter() *mux.Router {
 	serviceAccountsUseCase := usecases.NewServiceAccounts(
 		serviceAccountsRepo, rolesRepo, permissionsUseCase, a.oauth2Provider,
 	)
+
+	r.HandleFunc("/sso/auth/done",
+		authenticationExchangeCodeHandler(a.oauth2Provider, serviceAccountsUseCase),
+	).Methods("GET").Name("ssoAuthDone")
 
 	r.HandleFunc("/sso/auth/valid",
 		authenticationValidHandler(a.oauth2Provider, serviceAccountsUseCase),
