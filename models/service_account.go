@@ -21,3 +21,11 @@ func BuildKeyPairServiceAccount(name string) *ServiceAccount {
 		KeySecret: uuid.Must(uuid.NewV4()).String(),
 	}
 }
+
+// BuildOAuth2ServiceAccount generates a ServiceAccount with Name and Email
+func BuildOAuth2ServiceAccount(name, email string) *ServiceAccount {
+	return &ServiceAccount{
+		Name:  name,
+		Email: email,
+	}
+}

@@ -13,6 +13,7 @@ import (
 type ServiceAccounts interface {
 	Create(*models.ServiceAccount) error
 	CreateKeyPairType(string) (*models.ServiceAccount, error)
+	CreateOAuth2Type(string, string) (*models.ServiceAccount, error)
 	AuthenticateAccessToken(string) (*AccessTokenAuth, error)
 	AuthenticateKeyPair(string, string) (string, error)
 	HasPermission(string, string) (bool, error)
@@ -75,6 +76,17 @@ func (sas serviceAccounts) CreateKeyPairType(
 		return nil, err
 	}
 	return saKP, nil
+}
+
+// CreateOAuth2Type creates an oauth2 service account
+func (sas serviceAccounts) CreateOAuth2Type(
+	saName, saEmail string,
+) (*models.ServiceAccount, error) {
+	saOAuth2 := models.BuildOAuth2ServiceAccount(saName, saEmail)
+	if err := sas.Create(saOAuth2); err != nil {
+		return nil, err
+	}
+	return saOAuth2, nil
 }
 
 // GetRoles returns all roles to which the serviceAccountID is bound to

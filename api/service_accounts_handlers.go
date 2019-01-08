@@ -69,13 +69,39 @@ func serviceAccountsCreateHandler(
 		err = json.Unmarshal(body, &m)
 		name, ok := m["name"].(string)
 		if !ok || name == "" {
-			Write(w, http.StatusUnprocessableEntity, "body.name is required")
+			Write(w, http.StatusUnprocessableEntity,
+				`{ "error": { "name": "required" } }`)
 			return
 		}
-		_, err = sasUC.CreateKeyPairType(name)
-		if err != nil {
-			l.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
+		authenticationType, ok := m["authenticationType"].(string)
+		if !ok || authenticationType == "" {
+			Write(w, http.StatusUnprocessableEntity,
+				`{ "error": { "authenticationType": "required" } }`)
+			return
+		}
+		if authenticationType == "oauth2" {
+			email, ok := m["email"].(string)
+			if !ok || email == "" {
+				Write(w, http.StatusUnprocessableEntity,
+					`{ "error": { "email": "required" } }`)
+				return
+			}
+			_, err = sasUC.CreateOAuth2Type(name, email)
+			if err != nil {
+				l.Error(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		} else if authenticationType == "keypair" {
+			_, err = sasUC.CreateKeyPairType(name)
+			if err != nil {
+				l.Error(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		} else {
+			Write(w, http.StatusUnprocessableEntity,
+				`{ "error": { "authenticationType": "invalid" } }`)
 			return
 		}
 		w.WriteHeader(http.StatusCreated)

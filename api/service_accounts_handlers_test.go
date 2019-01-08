@@ -26,7 +26,6 @@ func beforeEachServiceAccountsHandlers(t *testing.T) {
 }
 
 func TestServiceAccountCreateHandler(t *testing.T) {
-	beforeEachServiceAccountsHandlers(t)
 	type createTest struct {
 		body           map[string]interface{}
 		expectedStatus int
@@ -36,6 +35,28 @@ func TestServiceAccountCreateHandler(t *testing.T) {
 			body: map[string]interface{}{
 				"name": "some name",
 			},
+			expectedStatus: http.StatusUnprocessableEntity,
+		},
+		createTest{
+			body: map[string]interface{}{
+				"name":               "some name",
+				"authenticationType": "keypair",
+			},
+			expectedStatus: http.StatusCreated,
+		},
+		createTest{
+			body: map[string]interface{}{
+				"name":               "some name",
+				"authenticationType": "oauth2",
+			},
+			expectedStatus: http.StatusUnprocessableEntity,
+		},
+		createTest{
+			body: map[string]interface{}{
+				"name":               "some name",
+				"email":              "email@email.com",
+				"authenticationType": "oauth2",
+			},
 			expectedStatus: http.StatusCreated,
 		},
 		createTest{
@@ -43,10 +64,11 @@ func TestServiceAccountCreateHandler(t *testing.T) {
 			expectedStatus: http.StatusUnprocessableEntity,
 		},
 	}
-	rootSA := helpers.CreateRootServiceAccount(t)
 
 	app := helpers.GetApp(t)
 	for _, tt := range tt {
+		beforeEachServiceAccountsHandlers(t)
+		rootSA := helpers.CreateRootServiceAccount(t)
 		bts, err := json.Marshal(tt.body)
 		if err != nil {
 			t.Errorf("Unexpected error %s", err.Error())
