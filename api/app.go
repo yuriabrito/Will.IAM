@@ -249,6 +249,14 @@ func (a *App) GetRouter() *mux.Router {
 	).
 		Methods("PUT").Name("permissionsCreatePermissionRequestHandler")
 
+	amUseCase := usecases.NewAM()
+
+	r.HandleFunc(
+		"/am",
+		amListHandler(amUseCase),
+	).
+		Methods("GET").Name("permissionsHasHandler")
+
 	return r
 }
 
