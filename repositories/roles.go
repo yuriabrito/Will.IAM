@@ -1,6 +1,8 @@
 package repositories
 
 import (
+	"fmt"
+
 	"github.com/ghostec/Will.IAM/models"
 )
 
@@ -9,6 +11,7 @@ type Roles interface {
 	ForServiceAccountID(string) ([]models.Role, error)
 	Create(*models.Role) error
 	Bind(models.Role, models.ServiceAccount) error
+	WithNamePrefix(string, int) ([]models.Role, error)
 	List() ([]models.Role, error)
 }
 
@@ -49,6 +52,19 @@ func (rs roles) Bind(r models.Role, sa models.ServiceAccount) error {
 		VALUES (?role_id, ?service_account_id)`, rb,
 	)
 	return err
+}
+
+func (rs roles) WithNamePrefix(
+	prefix string, maxResults int,
+) ([]models.Role, error) {
+	var rsSl []models.Role
+	if _, err := rs.storage.PG.DB.Query(
+		&rsSl, "SELECT id, name FROM roles WHERE name ILIKE ?",
+		fmt.Sprintf("%s%%", prefix),
+	); err != nil {
+		return nil, err
+	}
+	return rsSl, nil
 }
 
 func (rs roles) List() ([]models.Role, error) {
