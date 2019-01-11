@@ -2,11 +2,9 @@ package constants
 
 // Metrics constants
 var Metrics = struct {
-	APIRequestCount string
-	APIRequestPath  string
+	ResponseTime string
 }{
-	APIRequestCount: "api_request_count",
-	APIRequestPath:  "api_request_path",
+	ResponseTime: "response_time",
 }
 
 // AppInfo constants
@@ -15,5 +13,5 @@ var AppInfo = struct {
 	Version string
 }{
 	Name:    "Will.IAM",
-	Version: "2.0",
+	Version: "1.0",
 }

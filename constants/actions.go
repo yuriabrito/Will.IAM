@@ -1,16 +1,22 @@
 package constants
 
-// Actions are all Will.IAM supported permission verbs
-var Actions = struct {
-	Roles           []string
-	ServiceAccounts []string
-}{
-	Roles: []string{
-		"CreateRole",
-		"ListRoles",
-	},
-	ServiceAccounts: []string{
-		"CreateServiceAccount",
-		"ListServiceAccounts",
-	},
+// RolesActions are all possible actions over roles
+var RolesActions = []string{
+	"CreateRole",
+	"EditRole",
+	"ListRoles",
+}
+
+// ServiceAccountsActions are all possible actions over service accounts
+var ServiceAccountsActions = []string{
+	"CreateServiceAccount",
+	"EditServiceAccount",
+	"ListServiceAccounts",
+}
+
+// ServicesActions are all possible actions over services
+var ServicesActions = []string{
+	"CreateService",
+	"EditService",
+	"ListServices",
 }
