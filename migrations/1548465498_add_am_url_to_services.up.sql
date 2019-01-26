@@ -1,0 +1,1 @@
+ALTER TABLE services ADD COLUMN am_url VARCHAR(500);

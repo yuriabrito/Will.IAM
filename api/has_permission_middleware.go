@@ -2,8 +2,10 @@ package api
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/ghostec/Will.IAM/usecases"
+	"github.com/gorilla/mux"
 	"github.com/topfreegames/extensions/middleware"
 )
 
@@ -18,6 +20,9 @@ func hasPermissionMiddlewareBuilder(
 				l.Error("No ServiceAccountID in r.Context()")
 				w.WriteHeader(http.StatusInternalServerError)
 				return
+			}
+			if id, ok := mux.Vars(r)["id"]; ok {
+				permission = strings.Replace(permission, "{id}", id, 0)
 			}
 			has, err := sasUC.HasPermission(saID, permission)
 			if err != nil {

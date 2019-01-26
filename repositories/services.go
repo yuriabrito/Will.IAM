@@ -15,8 +15,9 @@ type services struct {
 func (ss services) Create(s *models.Service) error {
 	_, err := ss.storage.PG.DB.Query(
 		s, `INSERT INTO services (name, permission_name, service_account_id,
-		creator_service_account_id) VALUES (?name, ?permission_name,
-		?service_account_id, ?creator_service_account_id) RETURNING id`, s,
+		creator_service_account_id, am_url) VALUES (?name, ?permission_name,
+		?service_account_id, ?creator_service_account_id, ?am_url) RETURNING id`,
+		s,
 	)
 	return err
 }

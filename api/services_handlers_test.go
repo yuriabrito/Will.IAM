@@ -58,6 +58,7 @@ func TestServicesCreateHandler(t *testing.T) {
 		Name:                    "Some Service",
 		PermissionName:          "SomeService",
 		CreatorServiceAccountID: sa.ID,
+		AMURL:                   "http://localhost:3333/am",
 	}
 
 	app := helpers.GetApp(t)

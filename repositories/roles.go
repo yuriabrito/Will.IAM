@@ -13,6 +13,7 @@ type Roles interface {
 	Bind(models.Role, models.ServiceAccount) error
 	WithNamePrefix(string, int) ([]models.Role, error)
 	List() ([]models.Role, error)
+	Get(string) (*models.Role, error)
 }
 
 type roles struct {
@@ -75,6 +76,20 @@ func (rs roles) List() ([]models.Role, error) {
 		return nil, err
 	}
 	return rsSl, nil
+}
+
+func (rs roles) Get(id string) (*models.Role, error) {
+	r := new(models.Role)
+	if _, err := rs.storage.PG.DB.Query(
+		r, `SELECT id, name, is_base_role, created_at, updated_at
+		FROM roles WHERE id = ?`, id,
+	); err != nil {
+		return nil, err
+	}
+	if r.ID == "" {
+		return nil, fmt.Errorf("role %s not found", id)
+	}
+	return r, nil
 }
 
 // NewRoles roles ctor
