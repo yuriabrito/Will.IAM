@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/ghostec/Will.IAM/constants"
@@ -17,36 +18,62 @@ type am struct {
 }
 
 func (am *am) List(prefix string) ([]models.AM, error) {
-	if strings.Contains(prefix, "::") {
-		parts := strings.Split(prefix, "::")
-		ams, err := am.listResourceHierarchies(parts[0], parts[1])
+	if !strings.Contains(prefix, "::") {
+		services, err := am.listServices(prefix)
 		if err != nil {
 			return nil, err
 		}
-		return append(
-			[]models.AM{models.AM{Prefix: "*", Complete: true}}, ams...,
-		), nil
+		ams := make([]models.AM, len(services))
+		for i := range services {
+			ams[i] = models.AM{
+				Prefix:   services[i],
+				Complete: false,
+			}
+		}
+		return ams, nil
 	}
-	actions, err := am.listActions(prefix)
+	parts := strings.Split(prefix, "::")
+	if len(parts) == 2 {
+		actions, err := am.listActions(parts[0], parts[1])
+		if err != nil {
+			return nil, err
+		}
+		ams := make([]models.AM, len(actions))
+		for i := range actions {
+			ams[i] = models.AM{
+				Prefix:   actions[i],
+				Complete: false,
+			}
+		}
+		return ams, nil
+	}
+	ams, err := am.listResourceHierarchies(parts[0], parts[1])
 	if err != nil {
 		return nil, err
 	}
-	ams := make([]models.AM, len(actions))
-	for i := range actions {
-		ams[i] = models.AM{
-			Prefix:   actions[i],
-			Complete: false,
-		}
-	}
-	return ams, nil
+	return append(
+		[]models.AM{models.AM{Prefix: "*", Complete: true}}, ams...,
+	), nil
 }
 
-func (am *am) listActions(prefix string) ([]string, error) {
+func (am *am) listServices(prefix string) ([]string, error) {
+	svcs := []string{constants.AppInfo.Name}
+	filtered := []string{}
+	for i := range svcs {
+		if strings.HasPrefix(svcs[i], prefix) {
+			filtered = append(filtered, svcs[i])
+		}
+	}
+	return filtered, nil
+}
+
+func (am *am) listActions(service, prefix string) ([]string, error) {
+	// TODO: check if service exists and user can list its actions
 	all := append(constants.RolesActions, constants.ServiceAccountsActions...)
 	keep := []string{}
 	for i := range all {
 		if ok := strings.HasPrefix(all[i], prefix); ok {
-			keep = append(keep, all[i])
+			keep = append(keep, fmt.Sprintf("%s::%s", service, all[i]))
 		}
 	}
 	return keep, nil

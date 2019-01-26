@@ -1,12 +1,11 @@
 testable_packages=$(shell go list ./... | egrep -v 'constants|mocks|testing')
 project=$(shell basename $(PWD))
 project_test=${project}-test
-project_sanitized=$(shell echo $(project) | sed -e "s/\-//")
-project_sanitized_test=$(shell echo $(project)-test | sed -e "s/\-//")
 pg_dep=$(project)_postgres_1
 test_packages=`find . -type f -name "*.go" ! \( -path "*vendor*" \) | sed -En "s/([^\.])\/.*/\1/p" | uniq`
 database=postgres://postgres:$(project)@localhost:8432/$(project)?sslmode=disable
 database_test=postgres://postgres:$(project)@localhost:8432/$(project_test)?sslmode=disable
+platform=darwin
 
 setup: setup-gin setup-project
 
@@ -47,8 +46,8 @@ run:
 	@gin -i --port 3001 --appPort 4040 --bin Will.IAM run start-api
 
 setup-migrate:
-	@go get -u -d github.com/mattes/migrate/cli github.com/lib/pq
-	@go build -tags 'postgres' -o /usr/local/bin/migrate github.com/mattes/migrate/cli
+	@curl -L https://github.com/golang-migrate/migrate/releases/download/v4.2.2/migrate.$(platform)-amd64.tar.gz | tar xvz
+	@mv migrate.$(platform)-amd64 /usr/local/bin/migrate
 
 migrate:
 	@migrate -path migrations -database ${database} up

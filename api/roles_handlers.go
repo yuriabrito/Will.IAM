@@ -107,3 +107,25 @@ func rolesCreateHandler(
 		w.WriteHeader(http.StatusCreated)
 	}
 }
+
+func rolesViewHandler(
+	rsUC usecases.Roles,
+) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		l := middleware.GetLogger(r.Context())
+		id := mux.Vars(r)["id"]
+		role, err := rsUC.Get(id)
+		if err != nil {
+			l.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		bts, err := json.Marshal(role)
+		if err != nil {
+			l.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		WriteBytes(w, 200, bts)
+	}
+}

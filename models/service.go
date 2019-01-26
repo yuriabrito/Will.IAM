@@ -7,5 +7,6 @@ type Service struct {
 	PermissionName          string `json:"permissionName" pg:"permission_name"`
 	ServiceAccountID        string `json:"serviceAccountID" pg:"service_account_id"`
 	CreatorServiceAccountID string `json:"creatorServiceAccountID" pg:"creator_service_account_id"`
+	AMURL                   string `json:"amUrl" sql:"am_url"`
 	CreatedUpdatedAt
 }

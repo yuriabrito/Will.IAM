@@ -208,6 +208,16 @@ func (a *App) GetRouter() *mux.Router {
 		Methods("GET").Name("rolesListHandler")
 
 	r.Handle(
+		"/roles/{id}",
+		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionStr(
+			models.OwnershipLevels.Lender, "ViewRole", "{id}",
+		), http.HandlerFunc(
+			rolesViewHandler(rolesUseCase),
+		))),
+	).
+		Methods("GET").Name("rolesListHandler")
+
+	r.Handle(
 		"/roles",
 		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionStr(
 			models.OwnershipLevels.Lender, "CreateRole", "*",
