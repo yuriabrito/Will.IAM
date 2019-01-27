@@ -199,9 +199,11 @@ func (a *App) GetRouter() *mux.Router {
 
 	r.Handle(
 		"/roles/{id}",
-		authMiddle(http.HandlerFunc(
+		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionStr(
+			models.OwnershipLevels.Lender, "EditRole", "{id}",
+		), http.HandlerFunc(
 			rolesUpdateHandler(serviceAccountsUseCase, rolesUseCase),
-		)),
+		))),
 	).
 		Methods("PUT").Name("rolesUpdateHandler")
 
