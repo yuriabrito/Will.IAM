@@ -95,3 +95,12 @@ func CreateRootServiceAccount(t *testing.T) *models.ServiceAccount {
 	}
 	return rootSA
 }
+
+// GetRolesUseCase returns a usecases.Roles
+func GetRolesUseCase(t *testing.T) usecases.Roles {
+	t.Helper()
+	storage := GetStorage(t)
+	rsRepo := repositories.NewRoles(storage)
+	psRepo := repositories.NewPermissions(storage)
+	return usecases.NewRoles(rsRepo, psRepo)
+}

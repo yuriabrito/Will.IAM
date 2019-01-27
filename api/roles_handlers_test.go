@@ -3,10 +3,13 @@
 package api_test
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"testing"
 
+	"github.com/ghostec/Will.IAM/models"
 	helpers "github.com/ghostec/Will.IAM/testing"
 )
 
@@ -53,9 +56,9 @@ func TestRolesCreatePermissionHandler(t *testing.T) {
 		t.Errorf("Expected only 1 permission. Got %d", len(permissions))
 		return
 	}
-	if permissions[0].ToString() != p {
+	if permissions[0].String() != p {
 		t.Errorf(
-			"Expected permission to be %s. Got %s", p, permissions[0].ToString(),
+			"Expected permission to be %s. Got %s", p, permissions[0].String(),
 		)
 		return
 	}
@@ -85,5 +88,140 @@ func TestRolesCreatePermissionHandlerNonRootSA(t *testing.T) {
 	rec := helpers.DoRequest(t, req, app.GetRouter())
 	if rec.Code != http.StatusForbidden {
 		t.Errorf("Expected status 403. Got %d", rec.Code)
+	}
+}
+
+func TestRolesUpdateHandlerRootSA(t *testing.T) {
+	beforeEachRolesHandlers(t)
+	saUC := helpers.GetServiceAccountsUseCase(t)
+	rootSA := helpers.CreateRootServiceAccount(t)
+	creatorSA, err := saUC.CreateKeyPairType("creator sa")
+	if err != nil {
+		t.Errorf("Unexpected error %s", err.Error())
+		return
+	}
+	app := helpers.GetApp(t)
+
+	body := map[string]interface{}{
+		"name": "new role name",
+		"permissions": []string{
+			"SomeService::RO::SomeAction::*",
+		},
+	}
+	bts, err := json.Marshal(body)
+	if err != nil {
+		t.Errorf("Unexpected error %s", err.Error())
+		return
+	}
+	req, _ := http.NewRequest(
+		"PUT",
+		fmt.Sprintf("/roles/%s", creatorSA.BaseRoleID),
+		bytes.NewBuffer(bts),
+	)
+	req.Header.Set("Authorization", fmt.Sprintf(
+		"KeyPair %s:%s", rootSA.KeyID, rootSA.KeySecret,
+	))
+	rec := helpers.DoRequest(t, req, app.GetRouter())
+	if rec.Code != http.StatusOK {
+		t.Errorf("Expected status 200. Got %d", rec.Code)
+	}
+
+	rsUC := helpers.GetRolesUseCase(t)
+	r, err := rsUC.Get(creatorSA.BaseRoleID)
+	if err != nil {
+		t.Errorf("Unexpected error %s", err.Error())
+		return
+	}
+	if r.Name != "new role name" {
+		t.Errorf("Expected role name to be 'new role name'. Got %s", r.Name)
+	}
+
+	pSl, err := rsUC.GetPermissions(creatorSA.BaseRoleID)
+	if err != nil {
+		t.Errorf("Unexpected error %s", err.Error())
+		return
+	}
+	if len(pSl) != 1 {
+		t.Errorf("Expected to have 1 permission. Got %d", len(pSl))
+		return
+	}
+	if pSl[0].Service != "SomeService" {
+		t.Errorf("Expected service to be SomeService. Got %s", pSl[0].Service)
+		return
+	}
+	if pSl[0].OwnershipLevel != models.OwnershipLevels.Owner {
+		t.Errorf(
+			"Expected ownership level to be Owner. Got %s",
+			pSl[0].OwnershipLevel.String(),
+		)
+		return
+	}
+	if pSl[0].Action != "SomeAction" {
+		t.Errorf("Expected action to be SomeAction. Got %s", pSl[0].Action)
+		return
+	}
+	if pSl[0].ResourceHierarchy.String() != "*" {
+		t.Errorf("Expected resource hierarchy to be *. Got %s", pSl[0].ResourceHierarchy)
+		return
+	}
+}
+
+func TestRolesUpdateHandlerNonRootSA(t *testing.T) {
+	beforeEachRolesHandlers(t)
+	saUC := helpers.GetServiceAccountsUseCase(t)
+	creatorSA, err := saUC.CreateKeyPairType("creator sa")
+	if err != nil {
+		t.Errorf("Unexpected error %s", err.Error())
+		return
+	}
+	sa, err := saUC.CreateKeyPairType("some sa")
+	if err != nil {
+		t.Errorf("Unexpected error %s", err.Error())
+		return
+	}
+	app := helpers.GetApp(t)
+
+	body := map[string]interface{}{
+		"name": "new role name",
+		"permissions": []string{
+			"SomeService::RO::SomeAction::*",
+		},
+	}
+	bts, err := json.Marshal(body)
+	if err != nil {
+		t.Errorf("Unexpected error %s", err.Error())
+		return
+	}
+	req, _ := http.NewRequest(
+		"PUT",
+		fmt.Sprintf("/roles/%s", sa.BaseRoleID),
+		bytes.NewBuffer(bts),
+	)
+	req.Header.Set("Authorization", fmt.Sprintf(
+		"KeyPair %s:%s", creatorSA.KeyID, creatorSA.KeySecret,
+	))
+	rec := helpers.DoRequest(t, req, app.GetRouter())
+	if rec.Code != http.StatusForbidden {
+		t.Errorf("Expected status 403. Got %d", rec.Code)
+	}
+
+	rsUC := helpers.GetRolesUseCase(t)
+	r, err := rsUC.Get(creatorSA.BaseRoleID)
+	if err != nil {
+		t.Errorf("Unexpected error %s", err.Error())
+		return
+	}
+	if r.Name == "new role name" {
+		t.Error("Expected role name to be != 'new role name'")
+	}
+
+	pSl, err := rsUC.GetPermissions(creatorSA.BaseRoleID)
+	if err != nil {
+		t.Errorf("Unexpected error %s", err.Error())
+		return
+	}
+	if len(pSl) > 0 {
+		t.Errorf("Expected to have 0 permissions. Got %d", len(pSl))
+		return
 	}
 }

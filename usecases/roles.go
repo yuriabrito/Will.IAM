@@ -9,6 +9,7 @@ import (
 type Roles interface {
 	Create(r *models.Role) error
 	CreatePermission(string, *models.Permission) error
+	Update(*models.Role) error
 	Get(string) (*models.Role, error)
 	GetPermissions(string) ([]models.Permission, error)
 	WithNamePrefix(string, int) ([]models.Role, error)
@@ -27,6 +28,10 @@ func (rs roles) Create(r *models.Role) error {
 func (rs roles) CreatePermission(roleID string, p *models.Permission) error {
 	p.RoleID = roleID
 	return rs.permissionsRepository.Create(p)
+}
+
+func (rs roles) Update(r *models.Role) error {
+	return rs.rolesRepository.Update(r)
 }
 
 func (rs roles) GetPermissions(roleID string) ([]models.Permission, error) {

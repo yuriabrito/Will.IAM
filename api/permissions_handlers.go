@@ -30,7 +30,7 @@ func permissionsDeleteHandler(
 		}
 		p.OwnershipLevel = models.OwnershipLevels.Owner
 		saID, _ := getServiceAccountID(r.Context())
-		has, err := sasUC.HasPermission(saID, p.ToString())
+		has, err := sasUC.HasPermission(saID, p.String())
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)

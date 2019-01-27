@@ -3,6 +3,8 @@ package models
 import (
 	"fmt"
 	"strings"
+
+	"github.com/ghostec/Will.IAM/constants"
 )
 
 // OwnershipLevel defines the holding rights about a resource
@@ -28,8 +30,8 @@ func (o OwnershipLevel) Less(oo OwnershipLevel) bool {
 	return false
 }
 
-// ToString returns string fmt
-func (o OwnershipLevel) ToString() string {
+// String returns string fmt
+func (o OwnershipLevel) String() string {
 	return string(o)
 }
 
@@ -43,11 +45,11 @@ func BuildAction(str string) Action {
 
 // All checks if action matches any
 func (a Action) All() bool {
-	return a.ToString() == "*"
+	return a.String() == "*"
 }
 
-// ToString returns string representation
-func (a Action) ToString() string {
+// String returns string representation
+func (a Action) String() string {
 	return string(a)
 }
 
@@ -91,8 +93,8 @@ func (rh ResourceHierarchy) Contains(orh ResourceHierarchy) bool {
 	return true
 }
 
-// ToString returns string representation
-func (rh ResourceHierarchy) ToString() string {
+// String returns string representation
+func (rh ResourceHierarchy) String() string {
 	return string(rh)
 }
 
@@ -162,8 +164,8 @@ func (p Permission) IsPresent(permissions []Permission) bool {
 	return false
 }
 
-// ToString converts a permission to it's equivalent string format
-func (p Permission) ToString() string {
+// String converts a permission to it's equivalent string format
+func (p Permission) String() string {
 	return fmt.Sprintf(
 		"%s::%s::%s::%s", p.Service, p.OwnershipLevel, p.Action,
 		string(p.ResourceHierarchy),
@@ -189,7 +191,9 @@ func (p Permission) HasServiceFullOwnership() bool {
 // BuildWillIAMPermissionStr builds a permission in the format expected
 // by WillIAM handlers
 func BuildWillIAMPermissionStr(ro OwnershipLevel, action, rh string) string {
-	return fmt.Sprintf("WillIAM::%s::%s::%s", string(ro), action, rh)
+	return fmt.Sprintf(
+		"%s::%s::%s::%s", constants.AppInfo.Name, string(ro), action, rh,
+	)
 }
 
 // PermissionRequest type
@@ -207,8 +211,8 @@ type PermissionRequest struct {
 // ownership level
 func (r PermissionRequest) ToLenderString() string {
 	return fmt.Sprintf("%s::%s::%s::%s", r.Service,
-		OwnershipLevels.Lender.ToString(), r.Action.ToString(),
-		r.ResourceHierarchy.ToString())
+		OwnershipLevels.Lender.String(), r.Action.String(),
+		r.ResourceHierarchy.String())
 }
 
 // PermissionRequestState can be: created:0 granted:1 denied:2
@@ -225,8 +229,8 @@ var PermissionRequestStates = struct {
 	Denied:  2,
 }
 
-// ToString returns permission request state as string
-func (prs PermissionRequestState) ToString() string {
+// String returns permission request state as string
+func (prs PermissionRequestState) String() string {
 	i := int(prs)
 	switch i {
 	case 0:

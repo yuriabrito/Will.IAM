@@ -198,6 +198,14 @@ func (a *App) GetRouter() *mux.Router {
 		Methods("POST").Name("rolesCreatePermissionHandler")
 
 	r.Handle(
+		"/roles/{id}",
+		authMiddle(http.HandlerFunc(
+			rolesUpdateHandler(serviceAccountsUseCase, rolesUseCase),
+		)),
+	).
+		Methods("PUT").Name("rolesUpdateHandler")
+
+	r.Handle(
 		"/roles",
 		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionStr(
 			models.OwnershipLevels.Lender, "ListRoles", "*",

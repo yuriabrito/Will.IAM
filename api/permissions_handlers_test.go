@@ -172,8 +172,8 @@ func TestPermissionsCreateRequestHandler(t *testing.T) {
 		t.Errorf("Expected service to be SomeService. Got %s", prs[0].Service)
 		return
 	}
-	if prs[0].Action.ToString() != "SomeAction" {
-		t.Errorf("Expected action to be SomeAction. Got %s", prs[0].Action.ToString())
+	if prs[0].Action.String() != "SomeAction" {
+		t.Errorf("Expected action to be SomeAction. Got %s", prs[0].Action.String())
 		return
 	}
 	msg := "hey, can I have this permission?"
@@ -182,7 +182,7 @@ func TestPermissionsCreateRequestHandler(t *testing.T) {
 		return
 	}
 	if prs[0].State != models.PermissionRequestStates.Created {
-		t.Errorf("Expected state to be Created. Got %s", prs[0].State.ToString())
+		t.Errorf("Expected state to be Created. Got %s", prs[0].State.String())
 		return
 	}
 }

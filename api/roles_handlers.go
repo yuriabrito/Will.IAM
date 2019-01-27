@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -30,7 +31,7 @@ func rolesCreatePermissionHandler(
 		sameP.OwnershipLevel = models.OwnershipLevels.Owner
 
 		saID, _ := getServiceAccountID(r.Context())
-		has, err := sasUC.HasPermission(saID, sameP.ToString())
+		has, err := sasUC.HasPermission(saID, sameP.String())
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -53,6 +54,114 @@ func rolesCreatePermissionHandler(
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
+	}
+}
+
+func rolesUpdateHandler(
+	sasUC usecases.ServiceAccounts, rsUC usecases.Roles,
+) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		l := middleware.GetLogger(r.Context())
+		body, err := ioutil.ReadAll(r.Body)
+		defer r.Body.Close()
+		if err != nil {
+			l.WithError(err).Error("rolesUpdateHandler ioutil.ReadAll(body)")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		m := map[string]interface{}{}
+		err = json.Unmarshal(body, &m)
+		if err != nil {
+			l.WithError(err).Error("rolesUpdateHandler json.Unmarshal(body)")
+			Write(w, http.StatusBadRequest, `{"error": "body malformed"}`)
+			return
+		}
+		roleID := mux.Vars(r)["id"]
+		name, ok := m["name"]
+		if !ok {
+			l.WithError(err).Error("rolesUpdateHandler name is blank")
+			Write(w, http.StatusUnprocessableEntity, `{"error": "name is required"}`)
+			return
+		}
+		if _, ok = name.(string); !ok {
+			l.WithError(err).Error("rolesUpdateHandler name must be a string")
+			Write(
+				w, http.StatusUnprocessableEntity, `{"error": "name must be a string"}`,
+			)
+			return
+		}
+		// TODO: use tx
+		role := &models.Role{ID: roleID, Name: name.(string)}
+		if err = rsUC.Update(role); err != nil {
+			l.WithError(err).Error("rolesUpdateHandler rsUC.Update")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		// TODO: audit
+		permissionsI, ok := m["permissions"]
+		if !ok {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		permissions, ok := permissionsI.([]interface{})
+		if !ok {
+			l.WithError(err).Error(
+				"rolesUpdateHandler permissions must be an array of strings",
+			)
+			Write(
+				w, http.StatusUnprocessableEntity,
+				`{"error": "permissions must be an array of strings"}`,
+			)
+			return
+		}
+
+		pSl := make([]models.Permission, len(permissions))
+		for i := range permissions {
+			pStr, ok := permissions[i].(string)
+			if !ok {
+				Write(
+					w, http.StatusUnprocessableEntity, `{"error": "permission malformed"}`,
+				)
+				return
+			}
+			sameP, err := models.BuildPermission(pStr)
+			if err != nil {
+				Write(
+					w, http.StatusUnprocessableEntity, `{"error": "permission malformed"}`,
+				)
+				return
+			}
+			sameP.OwnershipLevel = models.OwnershipLevels.Owner
+			pSl[i] = sameP
+		}
+
+		saID, _ := getServiceAccountID(r.Context())
+		has, err := sasUC.HasPermissions(saID, pSl)
+		if err != nil {
+			l.WithError(err).Error("rolesUpdateHandler sasUC.HasPermissions")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		for i := range has {
+			if !has[i] {
+				Write(
+					w, http.StatusForbidden,
+					fmt.Sprintf(
+						`{ "error": "not owner of %s" }`,
+						m["permissions"].([]interface{})[i].(string),
+					),
+				)
+				return
+			}
+		}
+		for i := range pSl {
+			if err := rsUC.CreatePermission(roleID, &pSl[i]); err != nil {
+				l.WithError(err).Error("rolesUpdateHandler rsUC.CreatePermission")
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		}
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
