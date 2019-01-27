@@ -106,7 +106,7 @@ func (am *am) listWillIAMResourceHierarchies(
 	action, prefix string,
 ) ([]models.AM, error) {
 	if actionsContains(constants.RolesActions, action) {
-		return am.listRolesActionsRH(prefix)
+		return am.listRolesActionsRH(action, prefix)
 	}
 	if actionsContains(constants.ServiceAccountsActions, action) {
 		return []models.AM{}, nil
@@ -117,7 +117,12 @@ func (am *am) listWillIAMResourceHierarchies(
 	return []models.AM{}, nil
 }
 
-func (am *am) listRolesActionsRH(prefix string) ([]models.AM, error) {
+func (am *am) listRolesActionsRH(
+	action, prefix string,
+) ([]models.AM, error) {
+	if action == "CreateRole" || action == "ListRoles" {
+		return []models.AM{}, nil
+	}
 	rs, err := am.rsUC.WithNamePrefix(prefix, 10)
 	if err != nil {
 		return nil, err

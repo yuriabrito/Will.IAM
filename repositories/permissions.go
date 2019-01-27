@@ -74,7 +74,8 @@ action, resource_hierarchy FROM permissions
 func (ps *permissions) Create(p *models.Permission) error {
 	_, err := ps.storage.PG.DB.Exec(
 		`INSERT INTO permissions (role_id, service, ownership_level, action,
-		resource_hierarchy) VALUES (?, ?, ?, ?, ?) RETURNING id`, p.RoleID,
+		resource_hierarchy) VALUES (?, ?, ?, ?, ?)
+		ON CONFLICT DO NOTHING RETURNING id`, p.RoleID,
 		p.Service, p.OwnershipLevel, p.Action, p.ResourceHierarchy,
 	)
 	return err

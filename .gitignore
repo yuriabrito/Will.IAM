@@ -2,3 +2,4 @@ _build
 vendor
 docker_data
 Will.IAM
+*.coverprofile
