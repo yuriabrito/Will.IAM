@@ -5,6 +5,7 @@ var RolesActions = []string{
 	"CreateRole",
 	"EditRole",
 	"ListRoles",
+	"ViewRole",
 }
 
 // ServiceAccountsActions are all possible actions over service accounts

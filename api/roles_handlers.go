@@ -154,6 +154,8 @@ func rolesUpdateHandler(
 				return
 			}
 		}
+		// TODO: use tx
+		// TODO: GetPermissions and delete diff
 		for i := range pSl {
 			if err := rsUC.CreatePermission(roleID, &pSl[i]); err != nil {
 				l.WithError(err).Error("rolesUpdateHandler rsUC.CreatePermission")
@@ -229,7 +231,22 @@ func rolesViewHandler(
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		bts, err := json.Marshal(role)
+		pSl, err := rsUC.GetPermissions(id)
+		if err != nil {
+			l.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		permissions := make([]string, len(pSl))
+		for i := range pSl {
+			permissions[i] = pSl[i].String()
+		}
+		body := map[string]interface{}{
+			"id":          role.ID,
+			"name":        role.Name,
+			"permissions": permissions,
+		}
+		bts, err := json.Marshal(body)
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
