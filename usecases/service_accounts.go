@@ -17,6 +17,8 @@ type ServiceAccounts interface {
 	AuthenticateAccessToken(string) (*AccessTokenAuth, error)
 	AuthenticateKeyPair(string, string) (string, error)
 	HasPermission(string, string) (bool, error)
+	HasPermissionsStrings(string, []string) ([]bool, error)
+	HasPermissions(string, []models.Permission) ([]bool, error)
 	GetPermissions(string) ([]models.Permission, error)
 	CreatePermission(string, *models.Permission) error
 	Get(string) (*models.ServiceAccount, error)
@@ -189,6 +191,38 @@ func (sas serviceAccounts) HasPermission(
 		return false, err
 	}
 	return permission.IsPresent(permissions), nil
+}
+
+// HasPermissionsStrings returns an array of bools indicating whether a service
+// account has some permissions
+func (sas serviceAccounts) HasPermissionsStrings(
+	serviceAccountID string, permissions []string,
+) ([]bool, error) {
+	pSl := make([]models.Permission, len(permissions))
+	var err error
+	for i := range permissions {
+		pSl[i], err = models.BuildPermission(permissions[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return sas.HasPermissions(serviceAccountID, pSl)
+}
+
+// HasPermissions returns an array of bools indicating whether a service
+// account has some permissions
+func (sas serviceAccounts) HasPermissions(
+	serviceAccountID string, permissions []models.Permission,
+) ([]bool, error) {
+	saPermissions, err := sas.GetPermissions(serviceAccountID)
+	if err != nil {
+		return nil, err
+	}
+	has := make([]bool, len(permissions))
+	for i := range permissions {
+		has[i] = permissions[i].IsPresent(saPermissions)
+	}
+	return has, nil
 }
 
 func (sas serviceAccounts) GetPermissions(

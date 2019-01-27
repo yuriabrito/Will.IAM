@@ -10,6 +10,7 @@ import (
 type Roles interface {
 	ForServiceAccountID(string) ([]models.Role, error)
 	Create(*models.Role) error
+	Update(*models.Role) error
 	Bind(models.Role, models.ServiceAccount) error
 	WithNamePrefix(string, int) ([]models.Role, error)
 	List() ([]models.Role, error)
@@ -39,6 +40,13 @@ func (rs roles) Create(r *models.Role) error {
 	_, err := rs.storage.PG.DB.Query(
 		r, `INSERT INTO roles (name, is_base_role) VALUES (?name, ?is_base_role)
 		RETURNING id`, r,
+	)
+	return err
+}
+
+func (rs roles) Update(r *models.Role) error {
+	_, err := rs.storage.PG.DB.Query(
+		r, `UPDATE roles SET name = ?name WHERE id = ?id`, r,
 	)
 	return err
 }

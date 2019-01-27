@@ -33,27 +33,12 @@ func (am *am) List(prefix string) ([]models.AM, error) {
 		return ams, nil
 	}
 	parts := strings.Split(prefix, "::")
-	if len(parts) == 2 {
-		actions, err := am.listActions(parts[0], parts[1])
-		if err != nil {
-			return nil, err
-		}
-		ams := make([]models.AM, len(actions))
-		for i := range actions {
-			ams[i] = models.AM{
-				Prefix:   actions[i],
-				Complete: false,
-			}
-		}
-		return ams, nil
+	service := parts[0]
+	if service == constants.AppInfo.Name {
+		return am.listWillIAMPermissions(prefix)
 	}
-	ams, err := am.listResourceHierarchies(parts[0], parts[1])
-	if err != nil {
-		return nil, err
-	}
-	return append(
-		[]models.AM{models.AM{Prefix: "*", Complete: true}}, ams...,
-	), nil
+	// TODO: find service by name and use it's /am (AMURL)
+	return []models.AM{}, nil
 }
 
 func (am *am) listServices(prefix string) ([]string, error) {
@@ -67,13 +52,42 @@ func (am *am) listServices(prefix string) ([]string, error) {
 	return filtered, nil
 }
 
-func (am *am) listActions(service, prefix string) ([]string, error) {
-	// TODO: check if service exists and user can list its actions
+func (am *am) listWillIAMPermissions(prefix string) ([]models.AM, error) {
+	parts := strings.Split(prefix, "::")
+	if len(parts) == 2 {
+		actions, err := am.listWillIAMActions(parts[1])
+		if err != nil {
+			return nil, err
+		}
+		ams := make([]models.AM, len(actions))
+		for i := range actions {
+			ams[i] = models.AM{
+				Prefix:   fmt.Sprintf("%s::%s", parts[0], actions[i]),
+				Complete: false,
+			}
+		}
+		return ams, nil
+	}
+	ams, err := am.listWillIAMResourceHierarchies(parts[1], parts[2])
+	if err != nil {
+		return nil, err
+	}
+	for i := range ams {
+		ams[i].Prefix = fmt.Sprintf("%s::%s::%s", parts[0], parts[1], ams[i].Prefix)
+	}
+	return append(
+		[]models.AM{models.AM{
+			Prefix: fmt.Sprintf("%s::%s::*", parts[0], parts[1]), Complete: true,
+		}}, ams...,
+	), nil
+}
+
+func (am *am) listWillIAMActions(prefix string) ([]string, error) {
 	all := append(constants.RolesActions, constants.ServiceAccountsActions...)
 	keep := []string{}
 	for i := range all {
 		if ok := strings.HasPrefix(all[i], prefix); ok {
-			keep = append(keep, fmt.Sprintf("%s::%s", service, all[i]))
+			keep = append(keep, all[i])
 		}
 	}
 	return keep, nil
@@ -88,11 +102,11 @@ func actionsContains(actions []string, action string) bool {
 	return false
 }
 
-func (am *am) listResourceHierarchies(
-	action, rhPrefix string,
+func (am *am) listWillIAMResourceHierarchies(
+	action, prefix string,
 ) ([]models.AM, error) {
 	if actionsContains(constants.RolesActions, action) {
-		return am.listRolesActionsRH(rhPrefix)
+		return am.listRolesActionsRH(prefix)
 	}
 	if actionsContains(constants.ServiceAccountsActions, action) {
 		return []models.AM{}, nil
@@ -103,10 +117,8 @@ func (am *am) listResourceHierarchies(
 	return []models.AM{}, nil
 }
 
-func (am *am) listRolesActionsRH(
-	rhPrefix string,
-) ([]models.AM, error) {
-	rs, err := am.rsUC.WithNamePrefix(rhPrefix, 10)
+func (am *am) listRolesActionsRH(prefix string) ([]models.AM, error) {
+	rs, err := am.rsUC.WithNamePrefix(prefix, 10)
 	if err != nil {
 		return nil, err
 	}

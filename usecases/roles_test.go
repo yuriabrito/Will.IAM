@@ -51,7 +51,7 @@ func TestRolesCreatePermission(t *testing.T) {
 	if len(ps) != 1 {
 		t.Errorf("Expected len(permissions) to be 1. Got %d", len(ps))
 	}
-	if ps[0].ToString() != pStr {
-		t.Errorf("Expected permission to be %s. Got %s", pStr, ps[0].ToString())
+	if ps[0].String() != pStr {
+		t.Errorf("Expected permission to be %s. Got %s", pStr, ps[0].String())
 	}
 }
