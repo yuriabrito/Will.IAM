@@ -12,6 +12,7 @@ type Roles interface {
 	Update(*models.Role) error
 	Get(string) (*models.Role, error)
 	GetPermissions(string) ([]models.Permission, error)
+	GetServiceAccounts(string) ([]models.ServiceAccount, error)
 	WithNamePrefix(string, int) ([]models.Role, error)
 	List() ([]models.Role, error)
 }
@@ -37,6 +38,12 @@ func (rs roles) Update(r *models.Role) error {
 func (rs roles) GetPermissions(roleID string) ([]models.Permission, error) {
 	r := models.Role{ID: roleID}
 	return rs.permissionsRepository.ForRoles([]models.Role{r})
+}
+
+func (rs roles) GetServiceAccounts(
+	roleID string,
+) ([]models.ServiceAccount, error) {
+	return rs.rolesRepository.GetServiceAccounts(roleID)
 }
 
 func (rs roles) WithNamePrefix(

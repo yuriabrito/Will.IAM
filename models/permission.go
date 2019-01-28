@@ -188,12 +188,24 @@ func (p Permission) HasServiceFullOwnership() bool {
 	return p.HasServiceFullAccess() && p.OwnershipLevel == OwnershipLevels.Owner
 }
 
-// BuildWillIAMPermissionStr builds a permission in the format expected
+// buildWillIAMPermission builds a permission in the format expected
 // by WillIAM handlers
-func BuildWillIAMPermissionStr(ro OwnershipLevel, action, rh string) string {
+func buildWillIAMPermission(ro OwnershipLevel, action, rh string) string {
 	return fmt.Sprintf(
 		"%s::%s::%s::%s", constants.AppInfo.Name, string(ro), action, rh,
 	)
+}
+
+// BuildWillIAMPermissionLender builds a permission in the format expected
+// by WillIAM handlers
+func BuildWillIAMPermissionLender(action, rh string) string {
+	return buildWillIAMPermission(OwnershipLevels.Lender, action, rh)
+}
+
+// BuildWillIAMPermissionOwner builds a permission in the format expected
+// by WillIAM handlers
+func BuildWillIAMPermissionOwner(action, rh string) string {
+	return buildWillIAMPermission(OwnershipLevels.Owner, action, rh)
 }
 
 // PermissionRequest type

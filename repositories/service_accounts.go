@@ -10,6 +10,7 @@ import (
 type ServiceAccounts interface {
 	Get(string) (*models.ServiceAccount, error)
 	List() ([]models.ServiceAccount, error)
+	Search(string) ([]models.ServiceAccount, error)
 	ForEmail(string) (*models.ServiceAccount, error)
 	ForKeyPair(string, string) (*models.ServiceAccount, error)
 	Create(*models.ServiceAccount) error
@@ -39,6 +40,22 @@ func (sas serviceAccounts) List() ([]models.ServiceAccount, error) {
 		&saSl,
 		`SELECT id, name, email, picture FROM service_accounts
 		ORDER BY created_at DESC`,
+	); err != nil {
+		return nil, err
+	}
+	return saSl, nil
+}
+
+func (sas serviceAccounts) Search(
+	term string,
+) ([]models.ServiceAccount, error) {
+	saSl := []models.ServiceAccount{}
+	if _, err := sas.storage.PG.DB.Query(
+		&saSl,
+		`SELECT id, name, email, picture FROM service_accounts
+		WHERE name ILIKE '%?0%' OR email ILIKE '%?0%'
+		ORDER BY created_at DESC`,
+		term,
 	); err != nil {
 		return nil, err
 	}

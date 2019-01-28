@@ -23,6 +23,7 @@ type ServiceAccounts interface {
 	CreatePermission(string, *models.Permission) error
 	Get(string) (*models.ServiceAccount, error)
 	List() ([]models.ServiceAccount, error)
+	Search(string) ([]models.ServiceAccount, error)
 	GetRoles(string) ([]models.Role, error)
 }
 
@@ -117,6 +118,17 @@ func (sas serviceAccounts) Get(
 // List returns a list of all service accounts
 func (sas serviceAccounts) List() ([]models.ServiceAccount, error) {
 	saSl, err := sas.serviceAccountsRepository.List()
+	if err != nil {
+		return nil, err
+	}
+	return saSl, nil
+}
+
+// Search searches over Service Accounts names and emails
+func (sas serviceAccounts) Search(
+	term string,
+) ([]models.ServiceAccount, error) {
+	saSl, err := sas.serviceAccountsRepository.Search(term)
 	if err != nil {
 		return nil, err
 	}

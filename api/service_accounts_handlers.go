@@ -112,3 +112,29 @@ func serviceAccountsListHandler(
 		WriteBytes(w, 200, bts)
 	}
 }
+
+func serviceAccountsSearchHandler(
+	sasUC usecases.ServiceAccounts,
+) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		l := middleware.GetLogger(r.Context())
+		qs := r.URL.Query()
+		term := ""
+		if len(qs["permission"]) > 0 {
+			term = qs["permission"][0]
+		}
+		saSl, err := sasUC.Search(term)
+		if err != nil {
+			l.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		bts, err := keepJSONFieldsBytes(saSl, "id", "name", "email", "picture")
+		if err != nil {
+			l.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		WriteBytes(w, 200, bts)
+	}
+}
