@@ -227,13 +227,13 @@ func rolesViewHandler(
 		id := mux.Vars(r)["id"]
 		role, err := rsUC.Get(id)
 		if err != nil {
-			l.Error(err)
+			l.WithError(err).Error("rolesViewHandler rsUC.Get")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		pSl, err := rsUC.GetPermissions(id)
 		if err != nil {
-			l.Error(err)
+			l.WithError(err).Error("rolesViewHandler rsUC.GetPermissions")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -241,10 +241,23 @@ func rolesViewHandler(
 		for i := range pSl {
 			permissions[i] = pSl[i].String()
 		}
+		sas, err := rsUC.GetServiceAccounts(id)
+		if err != nil {
+			l.WithError(err).Error("rolesViewHandler rsUC.GetServiceAccounts")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		sasFiltered, err := keepJSONFields(sas, "id", "name", "picture")
+		if err != nil {
+			l.WithError(err).Error("rolesViewHandler keepJSONFields(sas)")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 		body := map[string]interface{}{
-			"id":          role.ID,
-			"name":        role.Name,
-			"permissions": permissions,
+			"id":              role.ID,
+			"name":            role.Name,
+			"permissions":     permissions,
+			"serviceAccounts": sasFiltered,
 		}
 		bts, err := json.Marshal(body)
 		if err != nil {

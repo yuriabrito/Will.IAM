@@ -161,10 +161,20 @@ func (a *App) GetRouter() *mux.Router {
 
 	r.Handle(
 		"/service_accounts",
-		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionStr(
-			models.OwnershipLevels.Lender, "ListServiceAccounts", "*",
+		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
+			"ListServiceAccounts", "*",
 		), http.HandlerFunc(
 			serviceAccountsListHandler(serviceAccountsUseCase),
+		))),
+	).
+		Methods("GET").Name("serviceAccountsListHandler")
+
+	r.Handle(
+		"/service_accounts/search",
+		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
+			"ListServiceAccounts", "*",
+		), http.HandlerFunc(
+			serviceAccountsSearchHandler(serviceAccountsUseCase),
 		))),
 	).
 		Methods("GET").Name("serviceAccountsListHandler")
@@ -179,8 +189,8 @@ func (a *App) GetRouter() *mux.Router {
 
 	r.Handle(
 		"/service_accounts",
-		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionStr(
-			models.OwnershipLevels.Lender, "CreateServiceAccount", "*",
+		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
+			"CreateServiceAccount", "*",
 		), http.HandlerFunc(
 			serviceAccountsCreateHandler(serviceAccountsUseCase),
 		))),
@@ -199,8 +209,8 @@ func (a *App) GetRouter() *mux.Router {
 
 	r.Handle(
 		"/roles/{id}",
-		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionStr(
-			models.OwnershipLevels.Lender, "EditRole", "{id}",
+		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
+			"EditRole", "{id}",
 		), http.HandlerFunc(
 			rolesUpdateHandler(serviceAccountsUseCase, rolesUseCase),
 		))),
@@ -209,8 +219,8 @@ func (a *App) GetRouter() *mux.Router {
 
 	r.Handle(
 		"/roles",
-		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionStr(
-			models.OwnershipLevels.Lender, "ListRoles", "*",
+		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
+			"ListRoles", "*",
 		), http.HandlerFunc(
 			rolesListHandler(rolesUseCase),
 		))),
@@ -219,8 +229,8 @@ func (a *App) GetRouter() *mux.Router {
 
 	r.Handle(
 		"/roles/{id}",
-		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionStr(
-			models.OwnershipLevels.Lender, "ViewRole", "{id}",
+		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
+			"ViewRole", "{id}",
 		), http.HandlerFunc(
 			rolesViewHandler(rolesUseCase),
 		))),
@@ -229,8 +239,8 @@ func (a *App) GetRouter() *mux.Router {
 
 	r.Handle(
 		"/roles",
-		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionStr(
-			models.OwnershipLevels.Lender, "CreateRole", "*",
+		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
+			"CreateRole", "*",
 		), http.HandlerFunc(
 			rolesCreateHandler(rolesUseCase),
 		))),

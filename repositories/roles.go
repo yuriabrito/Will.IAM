@@ -8,6 +8,7 @@ import (
 
 // Roles repository
 type Roles interface {
+	GetServiceAccounts(string) ([]models.ServiceAccount, error)
 	ForServiceAccountID(string) ([]models.Role, error)
 	Create(*models.Role) error
 	Update(*models.Role) error
@@ -19,6 +20,24 @@ type Roles interface {
 
 type roles struct {
 	storage *Storage
+}
+
+func (rs roles) GetServiceAccounts(
+	roleID string,
+) ([]models.ServiceAccount, error) {
+	sas := []models.ServiceAccount{}
+	_, err := rs.storage.PG.DB.Query(
+		&sas,
+		`SELECT sa.id, sa.name, sa.picture FROM service_accounts sa
+		JOIN role_bindings rb ON rb.service_account_id = sa.id
+		WHERE rb.role_id = ?
+		ORDER BY sa.created_at DESC`,
+		roleID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return sas, nil
 }
 
 func (rs roles) ForServiceAccountID(serviceAccountID string) ([]models.Role, error) {
