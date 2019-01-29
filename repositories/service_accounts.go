@@ -53,9 +53,9 @@ func (sas serviceAccounts) Search(
 	if _, err := sas.storage.PG.DB.Query(
 		&saSl,
 		`SELECT id, name, email, picture FROM service_accounts
-		WHERE name ILIKE '%?0%' OR email ILIKE '%?0%'
+		WHERE name ILIKE ?0 OR email ILIKE ?0
 		ORDER BY created_at DESC`,
-		term,
+		fmt.Sprintf("%%%s%%", term),
 	); err != nil {
 		return nil, err
 	}
