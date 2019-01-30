@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -31,7 +30,7 @@ func rolesCreatePermissionHandler(
 		sameP.OwnershipLevel = models.OwnershipLevels.Owner
 
 		saID, _ := getServiceAccountID(r.Context())
-		has, err := sasUC.HasPermission(saID, sameP.String())
+		has, err := sasUC.HasPermissionString(saID, sameP.String())
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -69,100 +68,41 @@ func rolesUpdateHandler(
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		m := map[string]interface{}{}
-		err = json.Unmarshal(body, &m)
+		ru := usecases.RoleUpdate{}
+		err = json.Unmarshal(body, &ru)
 		if err != nil {
 			l.WithError(err).Error("rolesUpdateHandler json.Unmarshal(body)")
 			Write(w, http.StatusBadRequest, `{"error": "body malformed"}`)
 			return
 		}
-		roleID := mux.Vars(r)["id"]
-		name, ok := m["name"]
-		if !ok {
-			l.WithError(err).Error("rolesUpdateHandler name is blank")
-			Write(w, http.StatusUnprocessableEntity, `{"error": "name is required"}`)
+		saID, _ := getServiceAccountID(r.Context())
+		ru.Permissions, err = models.BuildPermissions(ru.PermissionsStrings)
+		if err != nil {
+			l.WithError(err).Error("rolesUpdateHandler models.BuildPermissions")
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		if _, ok = name.(string); !ok {
-			l.WithError(err).Error("rolesUpdateHandler name must be a string")
+		has, err := sasUC.HasAllOwnerPermissions(saID, ru.Permissions)
+		if err != nil {
+			l.WithError(err).Error("rolesUpdateHandler sasUC.HasAllOwnerPermissionsStrings")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if !has {
 			Write(
-				w, http.StatusUnprocessableEntity, `{"error": "name must be a string"}`,
+				w, http.StatusForbidden,
+				`{ "error": "not owner of all permissions" }`,
 			)
 			return
 		}
-		// TODO: use tx
-		role := &models.Role{ID: roleID, Name: name.(string)}
-		if err = rsUC.Update(role); err != nil {
+		ru.ID = mux.Vars(r)["id"]
+		if err = rsUC.Update(ru); err != nil {
 			l.WithError(err).Error("rolesUpdateHandler rsUC.Update")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		// TODO: audit
-		permissionsI, ok := m["permissions"]
-		if !ok {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-		permissions, ok := permissionsI.([]interface{})
-		if !ok {
-			l.WithError(err).Error(
-				"rolesUpdateHandler permissions must be an array of strings",
-			)
-			Write(
-				w, http.StatusUnprocessableEntity,
-				`{"error": "permissions must be an array of strings"}`,
-			)
-			return
-		}
-
-		pSl := make([]models.Permission, len(permissions))
-		for i := range permissions {
-			pStr, ok := permissions[i].(string)
-			if !ok {
-				Write(
-					w, http.StatusUnprocessableEntity, `{"error": "permission malformed"}`,
-				)
-				return
-			}
-			sameP, err := models.BuildPermission(pStr)
-			if err != nil {
-				Write(
-					w, http.StatusUnprocessableEntity, `{"error": "permission malformed"}`,
-				)
-				return
-			}
-			sameP.OwnershipLevel = models.OwnershipLevels.Owner
-			pSl[i] = sameP
-		}
-
-		saID, _ := getServiceAccountID(r.Context())
-		has, err := sasUC.HasPermissions(saID, pSl)
-		if err != nil {
-			l.WithError(err).Error("rolesUpdateHandler sasUC.HasPermissions")
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		for i := range has {
-			if !has[i] {
-				Write(
-					w, http.StatusForbidden,
-					fmt.Sprintf(
-						`{ "error": "not owner of %s" }`,
-						m["permissions"].([]interface{})[i].(string),
-					),
-				)
-				return
-			}
-		}
-		// TODO: use tx
 		// TODO: GetPermissions and delete diff
-		for i := range pSl {
-			if err := rsUC.CreatePermission(roleID, &pSl[i]); err != nil {
-				l.WithError(err).Error("rolesUpdateHandler rsUC.CreatePermission")
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-		}
 		w.WriteHeader(http.StatusOK)
 	}
 }
@@ -247,7 +187,7 @@ func rolesViewHandler(
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		sasFiltered, err := keepJSONFields(sas, "id", "name", "picture")
+		sasFiltered, err := keepJSONFields(sas, "id", "name", "picture", "email")
 		if err != nil {
 			l.WithError(err).Error("rolesViewHandler keepJSONFields(sas)")
 			w.WriteHeader(http.StatusInternalServerError)

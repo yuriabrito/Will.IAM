@@ -149,6 +149,19 @@ func BuildPermission(str string) (Permission, error) {
 	}, nil
 }
 
+// BuildPermissions calls BuildPermission for all strings
+func BuildPermissions(ps []string) ([]Permission, error) {
+	pSl := make([]Permission, len(ps))
+	var err error
+	for i := range ps {
+		pSl[i], err = BuildPermission(ps[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return pSl, nil
+}
+
 // IsPresent checks if a permission is satisfied in a slice
 func (p Permission) IsPresent(permissions []Permission) bool {
 	for _, pp := range permissions {

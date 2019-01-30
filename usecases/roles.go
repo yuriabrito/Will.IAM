@@ -5,11 +5,20 @@ import (
 	"github.com/ghostec/Will.IAM/repositories"
 )
 
+// RoleUpdate is the required data to update a role
+type RoleUpdate struct {
+	ID                 string              `json:"-"`
+	Name               string              `json:"name"`
+	PermissionsStrings []string            `json:"permissions"`
+	Permissions        []models.Permission `json:"-"`
+	ServiceAccountsIDs []string            `json:"service_accounts_ids"`
+}
+
 // Roles define entrypoints for ServiceAccount actions
 type Roles interface {
 	Create(r *models.Role) error
 	CreatePermission(string, *models.Permission) error
-	Update(*models.Role) error
+	Update(RoleUpdate) error
 	Get(string) (*models.Role, error)
 	GetPermissions(string) ([]models.Permission, error)
 	GetServiceAccounts(string) ([]models.ServiceAccount, error)
@@ -31,8 +40,15 @@ func (rs roles) CreatePermission(roleID string, p *models.Permission) error {
 	return rs.permissionsRepository.Create(p)
 }
 
-func (rs roles) Update(r *models.Role) error {
-	return rs.rolesRepository.Update(r)
+func (rs roles) Update(ru RoleUpdate) error {
+	// TODO: use tx
+	for i := range ru.Permissions {
+		if err := rs.CreatePermission(ru.ID, &ru.Permissions[i]); err != nil {
+			return err
+		}
+	}
+	role := &models.Role{ID: ru.ID, Name: ru.Name}
+	return rs.rolesRepository.Update(role)
 }
 
 func (rs roles) GetPermissions(roleID string) ([]models.Permission, error) {
@@ -62,7 +78,8 @@ func (rs roles) Get(id string) (*models.Role, error) {
 
 // NewRoles ctor
 func NewRoles(
-	rsRepo repositories.Roles, psRepo repositories.Permissions,
+	rsRepo repositories.Roles,
+	psRepo repositories.Permissions,
 ) Roles {
 	return &roles{
 		rolesRepository:       rsRepo,
