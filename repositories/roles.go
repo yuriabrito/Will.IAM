@@ -64,6 +64,7 @@ func (rs roles) Create(r *models.Role) error {
 }
 
 func (rs roles) Update(r *models.Role) error {
+	// tx, err := rs.storage.PG.Begin(rs.storage.PG.DB)
 	_, err := rs.storage.PG.DB.Query(
 		r, `UPDATE roles SET name = ?name WHERE id = ?id`, r,
 	)

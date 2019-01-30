@@ -12,8 +12,8 @@ type Services interface {
 }
 
 type services struct {
-	servicesRepository     repositories.Services
-	serviceAccountsUseCase ServiceAccounts
+	repo  *repositories.All
+	sasUC ServiceAccounts
 }
 
 // Create a new service with unique name and permission name
@@ -24,11 +24,11 @@ func (ss services) Create(
 ) error {
 	// TODO: use tx
 	sa := models.BuildKeyPairServiceAccount(service.Name)
-	if err := ss.serviceAccountsUseCase.Create(sa); err != nil {
+	if err := ss.sasUC.Create(sa); err != nil {
 		return err
 	}
 	service.ServiceAccountID = sa.ID
-	if err := ss.servicesRepository.Create(service); err != nil {
+	if err := ss.repo.Services.Create(service); err != nil {
 		return err
 	}
 	buildFullAccessPermission := func() *models.Permission {
@@ -39,26 +39,26 @@ func (ss services) Create(
 			ResourceHierarchy: models.ResourceHierarchy("*"),
 		}
 	}
-	ss.serviceAccountsUseCase.CreatePermission(
+	ss.sasUC.CreatePermission(
 		sa.ID, buildFullAccessPermission(),
 	)
-	ss.serviceAccountsUseCase.CreatePermission(
+	ss.sasUC.CreatePermission(
 		creatorServiceAccountID, buildFullAccessPermission(),
 	)
 	return nil
 }
 
 func (ss services) All() ([]models.Service, error) {
-	return ss.servicesRepository.All()
+	return ss.repo.Services.All()
 }
 
 // NewServices services' ctor
 func NewServices(
-	servicesRepository repositories.Services,
-	serviceAccountsUseCase ServiceAccounts,
+	repo *repositories.All,
+	sasUC ServiceAccounts,
 ) Services {
 	return &services{
-		servicesRepository:     servicesRepository,
-		serviceAccountsUseCase: serviceAccountsUseCase,
+		repo:  repo,
+		sasUC: sasUC,
 	}
 }
