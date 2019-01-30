@@ -16,7 +16,8 @@ type ServiceAccounts interface {
 	CreateOAuth2Type(string, string) (*models.ServiceAccount, error)
 	AuthenticateAccessToken(string) (*AccessTokenAuth, error)
 	AuthenticateKeyPair(string, string) (string, error)
-	HasPermission(string, string) (bool, error)
+	HasPermissionString(string, string) (bool, error)
+	HasAllOwnerPermissions(string, []models.Permission) (bool, error)
 	HasPermissionsStrings(string, []string) ([]bool, error)
 	HasPermissions(string, []models.Permission) ([]bool, error)
 	GetPermissions(string) ([]models.Permission, error)
@@ -189,9 +190,9 @@ func (sas *serviceAccounts) AuthenticateKeyPair(
 	return sa.ID, nil
 }
 
-// HasPermission checks if user has the ownership level required to take an
+// HasPermissionString checks if user has the ownership level required to take an
 // action over a resource
-func (sas serviceAccounts) HasPermission(
+func (sas serviceAccounts) HasPermissionString(
 	serviceAccountID, permissionStr string,
 ) (bool, error) {
 	permissions, err := sas.GetPermissions(serviceAccountID)
@@ -203,6 +204,24 @@ func (sas serviceAccounts) HasPermission(
 		return false, err
 	}
 	return permission.IsPresent(permissions), nil
+}
+
+func (sas serviceAccounts) HasAllOwnerPermissions(
+	serviceAccountID string, permissions []models.Permission,
+) (bool, error) {
+	for i := range permissions {
+		permissions[i].OwnershipLevel = models.OwnershipLevels.Owner
+	}
+	has, err := sas.HasPermissions(serviceAccountID, permissions)
+	if err != nil {
+		return false, err
+	}
+	for i := range has {
+		if !has[i] {
+			return false, nil
+		}
+	}
+	return true, nil
 }
 
 // HasPermissionsStrings returns an array of bools indicating whether a service

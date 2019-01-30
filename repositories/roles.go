@@ -28,7 +28,7 @@ func (rs roles) GetServiceAccounts(
 	sas := []models.ServiceAccount{}
 	_, err := rs.storage.PG.DB.Query(
 		&sas,
-		`SELECT sa.id, sa.name, sa.picture FROM service_accounts sa
+		`SELECT sa.id, sa.name, sa.picture, sa.email FROM service_accounts sa
 		JOIN role_bindings rb ON rb.service_account_id = sa.id
 		WHERE rb.role_id = ?
 		ORDER BY sa.created_at DESC`,
