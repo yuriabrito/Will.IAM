@@ -29,24 +29,21 @@ type ServiceAccounts interface {
 }
 
 type serviceAccounts struct {
-	serviceAccountsRepository repositories.ServiceAccounts
-	rolesRepository           repositories.Roles
-	permissionsUseCase        Permissions
-	oauth2Provider            oauth2.Provider
+	repo               *repositories.All
+	permissionsUseCase Permissions
+	oauth2Provider     oauth2.Provider
 }
 
 // NewServiceAccounts serviceAccounts ctor
 func NewServiceAccounts(
-	serviceAccountsRepository repositories.ServiceAccounts,
-	rolesRepository repositories.Roles,
+	repo *repositories.All,
 	permissionsUseCase Permissions,
 	provider oauth2.Provider,
 ) ServiceAccounts {
 	return &serviceAccounts{
-		serviceAccountsRepository: serviceAccountsRepository,
-		rolesRepository:           rolesRepository,
-		permissionsUseCase:        permissionsUseCase,
-		oauth2Provider:            provider,
+		repo:               repo,
+		permissionsUseCase: permissionsUseCase,
+		oauth2Provider:     provider,
 	}
 }
 
@@ -57,14 +54,14 @@ func (sas serviceAccounts) Create(sa *models.ServiceAccount) error {
 		Name:       fmt.Sprintf("service-account:%s", sa.ID),
 		IsBaseRole: true,
 	}
-	if err := sas.rolesRepository.Create(r); err != nil {
+	if err := sas.repo.Roles.Create(r); err != nil {
 		return err
 	}
 	sa.BaseRoleID = r.ID
-	if err := sas.serviceAccountsRepository.Create(sa); err != nil {
+	if err := sas.repo.ServiceAccounts.Create(sa); err != nil {
 		return err
 	}
-	if err := sas.rolesRepository.Bind(*r, *sa); err != nil {
+	if err := sas.repo.Roles.Bind(*r, *sa); err != nil {
 		return err
 	}
 	return nil
@@ -98,7 +95,7 @@ func (sas serviceAccounts) CreateOAuth2Type(
 func (sas serviceAccounts) GetRoles(
 	serviceAccountID string,
 ) ([]models.Role, error) {
-	roles, err := sas.rolesRepository.ForServiceAccountID(serviceAccountID)
+	roles, err := sas.repo.Roles.ForServiceAccountID(serviceAccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +106,7 @@ func (sas serviceAccounts) GetRoles(
 func (sas serviceAccounts) Get(
 	serviceAccountID string,
 ) (*models.ServiceAccount, error) {
-	sa, err := sas.serviceAccountsRepository.Get(serviceAccountID)
+	sa, err := sas.repo.ServiceAccounts.Get(serviceAccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +115,7 @@ func (sas serviceAccounts) Get(
 
 // List returns a list of all service accounts
 func (sas serviceAccounts) List() ([]models.ServiceAccount, error) {
-	saSl, err := sas.serviceAccountsRepository.List()
+	saSl, err := sas.repo.ServiceAccounts.List()
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +126,7 @@ func (sas serviceAccounts) List() ([]models.ServiceAccount, error) {
 func (sas serviceAccounts) Search(
 	term string,
 ) ([]models.ServiceAccount, error) {
-	saSl, err := sas.serviceAccountsRepository.Search(term)
+	saSl, err := sas.repo.ServiceAccounts.Search(term)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +159,7 @@ func (sas *serviceAccounts) AuthenticateAccessToken(
 			return nil, err
 		}
 	}
-	sa, err := sas.serviceAccountsRepository.ForEmail(authResult.Email)
+	sa, err := sas.repo.ServiceAccounts.ForEmail(authResult.Email)
 	// TODO: use better errors
 	saNotFoundErr := fmt.Sprintf(
 		"Service Account not found for email %s", authResult.Email,
@@ -183,7 +180,7 @@ func (sas *serviceAccounts) AuthenticateAccessToken(
 func (sas *serviceAccounts) AuthenticateKeyPair(
 	keyID, keySecret string,
 ) (string, error) {
-	sa, err := sas.serviceAccountsRepository.ForKeyPair(keyID, keySecret)
+	sa, err := sas.repo.ServiceAccounts.ForKeyPair(keyID, keySecret)
 	if err != nil {
 		return "", err
 	}
@@ -259,7 +256,7 @@ func (sas serviceAccounts) HasPermissions(
 func (sas serviceAccounts) GetPermissions(
 	serviceAccountID string,
 ) ([]models.Permission, error) {
-	roles, err := sas.rolesRepository.ForServiceAccountID(serviceAccountID)
+	roles, err := sas.repo.Roles.ForServiceAccountID(serviceAccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -273,7 +270,7 @@ func (sas serviceAccounts) GetPermissions(
 func (sas serviceAccounts) CreatePermission(
 	serviceAccountID string, permission *models.Permission,
 ) error {
-	sa, err := sas.serviceAccountsRepository.Get(serviceAccountID)
+	sa, err := sas.repo.ServiceAccounts.Get(serviceAccountID)
 	if err != nil {
 		return err
 	}

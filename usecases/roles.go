@@ -27,17 +27,16 @@ type Roles interface {
 }
 
 type roles struct {
-	rolesRepository       repositories.Roles
-	permissionsRepository repositories.Permissions
+	repo *repositories.All
 }
 
 func (rs roles) Create(r *models.Role) error {
-	return rs.rolesRepository.Create(r)
+	return rs.repo.Roles.Create(r)
 }
 
 func (rs roles) CreatePermission(roleID string, p *models.Permission) error {
 	p.RoleID = roleID
-	return rs.permissionsRepository.Create(p)
+	return rs.repo.Permissions.Create(p)
 }
 
 func (rs roles) Update(ru RoleUpdate) error {
@@ -48,41 +47,35 @@ func (rs roles) Update(ru RoleUpdate) error {
 		}
 	}
 	role := &models.Role{ID: ru.ID, Name: ru.Name}
-	return rs.rolesRepository.Update(role)
+	return rs.repo.Roles.Update(role)
 }
 
 func (rs roles) GetPermissions(roleID string) ([]models.Permission, error) {
 	r := models.Role{ID: roleID}
-	return rs.permissionsRepository.ForRoles([]models.Role{r})
+	return rs.repo.Permissions.ForRoles([]models.Role{r})
 }
 
 func (rs roles) GetServiceAccounts(
 	roleID string,
 ) ([]models.ServiceAccount, error) {
-	return rs.rolesRepository.GetServiceAccounts(roleID)
+	return rs.repo.Roles.GetServiceAccounts(roleID)
 }
 
 func (rs roles) WithNamePrefix(
 	prefix string, maxResults int,
 ) ([]models.Role, error) {
-	return rs.rolesRepository.WithNamePrefix(prefix, maxResults)
+	return rs.repo.Roles.WithNamePrefix(prefix, maxResults)
 }
 
 func (rs roles) List() ([]models.Role, error) {
-	return rs.rolesRepository.List()
+	return rs.repo.Roles.List()
 }
 
 func (rs roles) Get(id string) (*models.Role, error) {
-	return rs.rolesRepository.Get(id)
+	return rs.repo.Roles.Get(id)
 }
 
 // NewRoles ctor
-func NewRoles(
-	rsRepo repositories.Roles,
-	psRepo repositories.Permissions,
-) Roles {
-	return &roles{
-		rolesRepository:       rsRepo,
-		permissionsRepository: psRepo,
-	}
+func NewRoles(repo *repositories.All) Roles {
+	return &roles{repo: repo}
 }

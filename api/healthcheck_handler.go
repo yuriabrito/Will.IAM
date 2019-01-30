@@ -3,14 +3,14 @@ package api
 import (
 	"net/http"
 
-	"github.com/ghostec/Will.IAM/repositories"
+	"github.com/ghostec/Will.IAM/usecases"
 )
 
 func healthcheckHandler(
-	repository repositories.Healthcheck,
+	uc usecases.Healthcheck,
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := repository.Do(); err != nil {
+		if err := uc.Do(); err != nil {
 			Write(w, http.StatusInternalServerError, `{"healthy": false}`)
 		} else {
 			Write(w, http.StatusOK, `{"healthy": true}`)

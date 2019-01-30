@@ -113,33 +113,29 @@ func (a *App) GetRouter() *mux.Router {
 	r.Use(middleware.Logging(a.logger))
 	r.Use(middleware.Metrics(a.metricsReporter))
 
+	repo := repositories.New(a.storage)
+
 	r.HandleFunc("/healthcheck", healthcheckHandler(
-		repositories.NewHealthcheck(a.storage),
+		usecases.NewHealthcheck(repo),
 	)).Methods("GET").Name("healthcheck")
 
 	r.HandleFunc("/sso/auth/do",
 		authenticationBuildURLHandler(a.oauth2Provider),
 	).Methods("GET").Name("ssoAuthDo")
 
-	serviceAccountsRepo := repositories.NewServiceAccounts(a.storage)
-	rolesRepo := repositories.NewRoles(a.storage)
-	permissionsRepo := repositories.NewPermissions(a.storage)
-	permissionsUseCase := usecases.NewPermissions(permissionsRepo)
-	serviceAccountsUseCase := usecases.NewServiceAccounts(
-		serviceAccountsRepo, rolesRepo, permissionsUseCase, a.oauth2Provider,
-	)
+	psUC := usecases.NewPermissions(repo)
+	sasUC := usecases.NewServiceAccounts(repo, psUC, a.oauth2Provider)
 
 	r.HandleFunc("/sso/auth/done",
-		authenticationExchangeCodeHandler(a.oauth2Provider, serviceAccountsUseCase),
+		authenticationExchangeCodeHandler(a.oauth2Provider, sasUC),
 	).Methods("GET").Name("ssoAuthDone")
 
 	r.HandleFunc("/sso/auth/valid",
-		authenticationValidHandler(a.oauth2Provider, serviceAccountsUseCase),
+		authenticationValidHandler(a.oauth2Provider, sasUC),
 	).Methods("GET").Name("ssoAuthValid")
 
-	servicesRepo := repositories.NewServices(a.storage)
-	servicesUseCase := usecases.NewServices(servicesRepo, serviceAccountsUseCase)
-	authMiddle := authMiddleware(serviceAccountsUseCase)
+	ssUC := usecases.NewServices(repo, sasUC)
+	authMiddle := authMiddleware(sasUC)
 
 	r.Handle("/sso/auth",
 		authMiddle(http.HandlerFunc(authenticationHandler)),
@@ -152,19 +148,19 @@ func (a *App) GetRouter() *mux.Router {
 	r.Handle(
 		"/services",
 		authMiddle(http.HandlerFunc(
-			servicesCreateHandler(servicesUseCase),
+			servicesCreateHandler(ssUC),
 		)),
 	).
 		Methods("POST").Name("servicesCreateHandler")
 
-	hasPermissionMiddle := hasPermissionMiddlewareBuilder(serviceAccountsUseCase)
+	hasPermissionMiddle := hasPermissionMiddlewareBuilder(sasUC)
 
 	r.Handle(
 		"/service_accounts",
 		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
 			"ListServiceAccounts", "*",
 		), http.HandlerFunc(
-			serviceAccountsListHandler(serviceAccountsUseCase),
+			serviceAccountsListHandler(sasUC),
 		))),
 	).
 		Methods("GET").Name("serviceAccountsListHandler")
@@ -174,7 +170,7 @@ func (a *App) GetRouter() *mux.Router {
 		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
 			"ListServiceAccounts", "*",
 		), http.HandlerFunc(
-			serviceAccountsSearchHandler(serviceAccountsUseCase),
+			serviceAccountsSearchHandler(sasUC),
 		))),
 	).
 		Methods("GET").Name("serviceAccountsListHandler")
@@ -182,7 +178,7 @@ func (a *App) GetRouter() *mux.Router {
 	r.Handle(
 		"/service_accounts/{id}",
 		authMiddle(http.HandlerFunc(
-			serviceAccountsGetHandler(serviceAccountsUseCase),
+			serviceAccountsGetHandler(sasUC),
 		)),
 	).
 		Methods("GET").Name("serviceAccountsGetHandler")
@@ -192,17 +188,17 @@ func (a *App) GetRouter() *mux.Router {
 		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
 			"CreateServiceAccount", "*",
 		), http.HandlerFunc(
-			serviceAccountsCreateHandler(serviceAccountsUseCase),
+			serviceAccountsCreateHandler(sasUC),
 		))),
 	).
 		Methods("POST").Name("serviceAccountsCreateHandler")
 
-	rolesUseCase := usecases.NewRoles(rolesRepo, permissionsRepo)
+	rsUC := usecases.NewRoles(repo)
 
 	r.Handle(
 		"/roles/{id}/permissions",
 		authMiddle(http.HandlerFunc(
-			rolesCreatePermissionHandler(serviceAccountsUseCase, rolesUseCase),
+			rolesCreatePermissionHandler(sasUC, rsUC),
 		)),
 	).
 		Methods("POST").Name("rolesCreatePermissionHandler")
@@ -212,7 +208,7 @@ func (a *App) GetRouter() *mux.Router {
 		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
 			"EditRole", "{id}",
 		), http.HandlerFunc(
-			rolesUpdateHandler(serviceAccountsUseCase, rolesUseCase),
+			rolesUpdateHandler(sasUC, rsUC),
 		))),
 	).
 		Methods("PUT").Name("rolesUpdateHandler")
@@ -222,7 +218,7 @@ func (a *App) GetRouter() *mux.Router {
 		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
 			"ListRoles", "*",
 		), http.HandlerFunc(
-			rolesListHandler(rolesUseCase),
+			rolesListHandler(rsUC),
 		))),
 	).
 		Methods("GET").Name("rolesListHandler")
@@ -232,7 +228,7 @@ func (a *App) GetRouter() *mux.Router {
 		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
 			"ViewRole", "{id}",
 		), http.HandlerFunc(
-			rolesViewHandler(rolesUseCase),
+			rolesViewHandler(rsUC),
 		))),
 	).
 		Methods("GET").Name("rolesListHandler")
@@ -242,7 +238,7 @@ func (a *App) GetRouter() *mux.Router {
 		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
 			"CreateRole", "*",
 		), http.HandlerFunc(
-			rolesCreateHandler(rolesUseCase),
+			rolesCreateHandler(rsUC),
 		))),
 	).
 		Methods("POST").Name("rolesCreateHandler")
@@ -250,7 +246,7 @@ func (a *App) GetRouter() *mux.Router {
 	r.Handle(
 		"/permissions/{id}",
 		authMiddle(http.HandlerFunc(permissionsDeleteHandler(
-			serviceAccountsUseCase, permissionsUseCase,
+			sasUC, psUC,
 		))),
 	).
 		Methods("DELETE").Name("permissionsDeleteHandler")
@@ -258,7 +254,7 @@ func (a *App) GetRouter() *mux.Router {
 	r.Handle(
 		"/permissions/requests",
 		authMiddle(http.HandlerFunc(permissionsGetPermissionRequestsHandler(
-			serviceAccountsUseCase, permissionsUseCase,
+			sasUC, psUC,
 		))),
 	).
 		Methods("GET").Name("permissionsGetPermissionRequestsHandler")
@@ -266,7 +262,7 @@ func (a *App) GetRouter() *mux.Router {
 	r.Handle(
 		"/permissions/has",
 		authMiddle(http.HandlerFunc(
-			permissionsHasHandler(serviceAccountsUseCase),
+			permissionsHasHandler(sasUC),
 		)),
 	).
 		Methods("GET").Name("permissionsHasHandler")
@@ -274,12 +270,12 @@ func (a *App) GetRouter() *mux.Router {
 	r.Handle(
 		"/permissions/requests",
 		authMiddle(http.HandlerFunc(permissionsCreatePermissionRequestHandler(
-			serviceAccountsUseCase, permissionsUseCase,
+			sasUC, psUC,
 		))),
 	).
 		Methods("PUT").Name("permissionsCreatePermissionRequestHandler")
 
-	amUseCase := usecases.NewAM(rolesUseCase)
+	amUseCase := usecases.NewAM(rsUC)
 
 	r.HandleFunc(
 		"/am",
