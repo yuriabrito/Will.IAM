@@ -19,9 +19,7 @@ type tokens struct {
 }
 
 func (ts *tokens) Clone() Tokens {
-	c := &tokens{}
-	c.setStorage(ts.storage.Clone())
-	return c
+	return NewTokens(ts.storage.Clone())
 }
 
 func (ts tokens) Get(accessToken string) (*models.Token, error) {

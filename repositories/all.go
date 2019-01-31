@@ -21,30 +21,34 @@ func New(s *Storage) *All {
 		Permissions:     NewPermissions(s),
 		Roles:           NewRoles(s),
 		ServiceAccounts: NewServiceAccounts(s),
+		Services:        NewServices(s),
 		Tokens:          NewTokens(s),
 		Healthcheck:     NewHealthcheck(s),
+		storage:         s,
 	}
 }
 
 // WithPGTx clones All and all its contents and injects a PG tx
 // in it's storage.PG.DB and in all inner repo storages
-func (a *All) WithPGTx() (*All, error) {
+func (a All) WithPGTx() (*All, error) {
 	c := &All{
 		Permissions:     a.Permissions.Clone(),
 		Roles:           a.Roles.Clone(),
 		ServiceAccounts: a.ServiceAccounts.Clone(),
+		Services:        a.Services.Clone(),
 		Tokens:          a.Tokens.Clone(),
 		storage:         a.storage.Clone(),
 	}
-	tx, err := a.storage.PG.Begin(a.storage.PG.DB)
+	tx, err := c.storage.PG.Begin(c.storage.PG.DB)
 	if err != nil {
 		return nil, err
 	}
-	a.storage.PG.DB = tx
-	c.Permissions.setStorage(a.storage)
-	c.Roles.setStorage(a.storage)
-	c.ServiceAccounts.setStorage(a.storage)
-	c.Tokens.setStorage(a.storage)
+	c.storage.PG.DB = tx
+	c.Permissions.setStorage(c.storage)
+	c.Roles.setStorage(c.storage)
+	c.ServiceAccounts.setStorage(c.storage)
+	c.Services.setStorage(c.storage)
+	c.Tokens.setStorage(c.storage)
 	return c, nil
 }
 

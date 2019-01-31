@@ -24,9 +24,7 @@ type permissions struct {
 }
 
 func (ps *permissions) Clone() Permissions {
-	c := &permissions{}
-	c.setStorage(ps.storage.Clone())
-	return c
+	return NewPermissions(ps.storage.Clone())
 }
 
 // Get retrieves a permission by id
