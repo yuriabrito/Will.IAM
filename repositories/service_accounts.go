@@ -14,10 +14,18 @@ type ServiceAccounts interface {
 	ForEmail(string) (*models.ServiceAccount, error)
 	ForKeyPair(string, string) (*models.ServiceAccount, error)
 	Create(*models.ServiceAccount) error
+	Clone() ServiceAccounts
+	setStorage(*Storage)
 }
 
 type serviceAccounts struct {
-	storage *Storage
+	*withStorage
+}
+
+func (sas *serviceAccounts) Clone() ServiceAccounts {
+	c := &serviceAccounts{}
+	c.setStorage(sas.storage.Clone())
+	return c
 }
 
 func (sas serviceAccounts) Get(id string) (*models.ServiceAccount, error) {
@@ -109,5 +117,5 @@ func (sas serviceAccounts) Create(sa *models.ServiceAccount) error {
 
 // NewServiceAccounts serviceAccounts ctor
 func NewServiceAccounts(s *Storage) ServiceAccounts {
-	return &serviceAccounts{storage: s}
+	return &serviceAccounts{&withStorage{storage: s}}
 }

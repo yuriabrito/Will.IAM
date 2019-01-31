@@ -6,10 +6,18 @@ import "github.com/ghostec/Will.IAM/models"
 type Services interface {
 	All() ([]models.Service, error)
 	Create(*models.Service) error
+	Clone() Services
+	setStorage(*Storage)
 }
 
 type services struct {
-	storage *Storage
+	*withStorage
+}
+
+func (ss *services) Clone() Services {
+	c := &services{}
+	c.setStorage(ss.storage.Clone())
+	return c
 }
 
 func (ss services) Create(s *models.Service) error {
@@ -35,5 +43,5 @@ func (ss services) All() ([]models.Service, error) {
 
 // NewServices services ctor
 func NewServices(s *Storage) Services {
-	return &services{storage: s}
+	return &services{&withStorage{storage: s}}
 }

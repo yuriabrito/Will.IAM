@@ -16,10 +16,18 @@ type Roles interface {
 	WithNamePrefix(string, int) ([]models.Role, error)
 	List() ([]models.Role, error)
 	Get(string) (*models.Role, error)
+	Clone() Roles
+	setStorage(*Storage)
 }
 
 type roles struct {
-	storage *Storage
+	*withStorage
+}
+
+func (rs *roles) Clone() Roles {
+	c := &roles{}
+	c.setStorage(rs.storage.Clone())
+	return c
 }
 
 func (rs roles) GetServiceAccounts(
@@ -122,5 +130,5 @@ func (rs roles) Get(id string) (*models.Role, error) {
 
 // NewRoles roles ctor
 func NewRoles(s *Storage) Roles {
-	return &roles{storage: s}
+	return &roles{&withStorage{storage: s}}
 }

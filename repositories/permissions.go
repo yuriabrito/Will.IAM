@@ -4,21 +4,29 @@ import (
 	"fmt"
 
 	"github.com/ghostec/Will.IAM/models"
-	"github.com/go-pg/pg"
 )
 
 // Permissions repository
 type Permissions interface {
 	Get(string) (*models.Permission, error)
-	ForRoles([]models.Role) ([]models.Permission, error)
+	ForServiceAccount(string) ([]models.Permission, error)
+	ForRole(string) ([]models.Permission, error)
 	Create(*models.Permission) error
 	CreateRequest(string, *models.PermissionRequest) error
 	GetPermissionRequests(string) ([]models.PermissionRequest, error)
 	Delete(string) error
+	Clone() Permissions
+	setStorage(*Storage)
 }
 
 type permissions struct {
-	storage *Storage
+	*withStorage
+}
+
+func (ps *permissions) Clone() Permissions {
+	c := &permissions{}
+	c.setStorage(ps.storage.Clone())
+	return c
 }
 
 // Get retrieves a permission by id
@@ -52,19 +60,29 @@ func (ps *permissions) GetPermissionRequests(
 	return prs, nil
 }
 
-func (ps *permissions) ForRoles(
-	roles []models.Role,
+func (ps *permissions) ForServiceAccount(
+	saID string,
 ) ([]models.Permission, error) {
-	rolesIds := make([]string, len(roles))
-	for i := range roles {
-		rolesIds[i] = roles[i].ID
-	}
-
-	var permissions []models.Permission
+	permissions := []models.Permission{}
 	if _, err := ps.storage.PG.DB.Query(
-		&permissions, `SELECT id, role_id, service, ownership_level,
-action, resource_hierarchy FROM permissions
-	WHERE role_id = ANY (?)`, pg.Array(rolesIds),
+		&permissions, `SELECT p.id, p.role_id, p.service, p.ownership_level,
+p.action, p.resource_hierarchy FROM permissions p
+	JOIN role_bindings rb ON rb.role_id = p.role_id
+	WHERE rb.service_account_id = ?`, saID,
+	); err != nil {
+		return nil, err
+	}
+	return permissions, nil
+}
+
+func (ps *permissions) ForRole(
+	roleID string,
+) ([]models.Permission, error) {
+	permissions := []models.Permission{}
+	if _, err := ps.storage.PG.DB.Query(
+		&permissions, `SELECT p.id, p.role_id, p.service, p.ownership_level,
+p.action, p.resource_hierarchy FROM permissions p
+	WHERE p.role_id = ?`, roleID,
 	); err != nil {
 		return nil, err
 	}
@@ -99,5 +117,5 @@ func (ps *permissions) Delete(id string) error {
 
 // NewPermissions users ctor
 func NewPermissions(s *Storage) Permissions {
-	return &permissions{storage: s}
+	return &permissions{&withStorage{storage: s}}
 }
