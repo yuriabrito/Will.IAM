@@ -1,5 +1,9 @@
 package repositories
 
+import (
+	"github.com/topfreegames/extensions/pg"
+)
+
 // All holds a reference to each possible repository interface
 type All struct {
 	Permissions     Permissions
@@ -42,4 +46,14 @@ func (a *All) WithPGTx() (*All, error) {
 	c.ServiceAccounts.setStorage(a.storage)
 	c.Tokens.setStorage(a.storage)
 	return c, nil
+}
+
+// PGTxCommit commits the tx in a.storage.PG.DB
+func (a *All) PGTxCommit() error {
+	return pg.Commit(a.storage.PG.DB)
+}
+
+// PGTxRollback does a rollback to the tx in a.storage.PG.DB
+func (a *All) PGTxRollback() error {
+	return pg.Rollback(a.storage.PG.DB)
 }
