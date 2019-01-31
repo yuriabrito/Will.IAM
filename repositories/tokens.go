@@ -10,10 +10,18 @@ import (
 type Tokens interface {
 	Get(string) (*models.Token, error)
 	Save(*models.Token) error
+	Clone() Tokens
+	setStorage(*Storage)
 }
 
 type tokens struct {
-	storage *Storage
+	*withStorage
+}
+
+func (ts *tokens) Clone() Tokens {
+	c := &tokens{}
+	c.setStorage(ts.storage.Clone())
+	return c
 }
 
 func (ts tokens) Get(accessToken string) (*models.Token, error) {
@@ -42,5 +50,5 @@ func (ts tokens) Save(token *models.Token) error {
 
 // NewTokens ctor
 func NewTokens(storage *Storage) Tokens {
-	return &tokens{storage: storage}
+	return &tokens{&withStorage{storage: storage}}
 }

@@ -51,8 +51,7 @@ func (rs roles) Update(ru RoleUpdate) error {
 }
 
 func (rs roles) GetPermissions(roleID string) ([]models.Permission, error) {
-	r := models.Role{ID: roleID}
-	return rs.repo.Permissions.ForRoles([]models.Role{r})
+	return rs.repo.Permissions.ForRole(roleID)
 }
 
 func (rs roles) GetServiceAccounts(

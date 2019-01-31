@@ -12,7 +12,6 @@ type Permissions interface {
 	Create(*models.Permission) error
 	CreateRequest(string, *models.PermissionRequest) error
 	GetPermissionRequests(string) ([]models.PermissionRequest, error)
-	ForRoles([]models.Role) ([]models.Permission, error)
 }
 
 type permissions struct {
@@ -36,12 +35,6 @@ func (ps permissions) CreateRequest(
 
 func (ps permissions) Create(p *models.Permission) error {
 	return ps.repo.Permissions.Create(p)
-}
-
-func (ps permissions) ForRoles(
-	rs []models.Role,
-) ([]models.Permission, error) {
-	return ps.repo.Permissions.ForRoles(rs)
 }
 
 func (ps permissions) GetPermissionRequests(

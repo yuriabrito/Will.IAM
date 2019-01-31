@@ -124,7 +124,7 @@ func (a *App) GetRouter() *mux.Router {
 	).Methods("GET").Name("ssoAuthDo")
 
 	psUC := usecases.NewPermissions(repo)
-	sasUC := usecases.NewServiceAccounts(repo, psUC, a.oauth2Provider)
+	sasUC := usecases.NewServiceAccounts(repo, a.oauth2Provider)
 
 	r.HandleFunc("/sso/auth/done",
 		authenticationExchangeCodeHandler(a.oauth2Provider, sasUC),
