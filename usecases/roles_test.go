@@ -6,9 +6,7 @@ import (
 	"testing"
 
 	"github.com/ghostec/Will.IAM/models"
-	"github.com/ghostec/Will.IAM/repositories"
 	helpers "github.com/ghostec/Will.IAM/testing"
-	"github.com/ghostec/Will.IAM/usecases"
 )
 
 func beforeEachRoles(t *testing.T) {
@@ -20,17 +18,9 @@ func beforeEachRoles(t *testing.T) {
 	}
 }
 
-func getRolesUseCase(t *testing.T) usecases.Roles {
-	t.Helper()
-	storage := helpers.GetStorage(t)
-	rsRepo := repositories.NewRoles(storage)
-	psRepo := repositories.NewPermissions(storage)
-	return usecases.NewRoles(rsRepo, psRepo)
-}
-
 func TestRolesCreatePermission(t *testing.T) {
 	beforeEachRoles(t)
-	rsUC := getRolesUseCase(t)
+	rsUC := helpers.GetRolesUseCase(t)
 	pStr := "Maestro::RL::CreateScheduler::some-game::*"
 	p, err := models.BuildPermission(pStr)
 	if err != nil {

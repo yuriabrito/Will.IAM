@@ -9,10 +9,7 @@ import (
 	"testing"
 
 	"github.com/ghostec/Will.IAM/models"
-	"github.com/ghostec/Will.IAM/oauth2"
-	"github.com/ghostec/Will.IAM/repositories"
 	helpers "github.com/ghostec/Will.IAM/testing"
-	"github.com/ghostec/Will.IAM/usecases"
 )
 
 func beforeEachServices(t *testing.T) {
@@ -24,27 +21,9 @@ func beforeEachServices(t *testing.T) {
 	}
 }
 
-func getServiceAccountsUseCase(t *testing.T) usecases.ServiceAccounts {
-	t.Helper()
-	storage := helpers.GetStorage(t)
-	saRepo := repositories.NewServiceAccounts(storage)
-	rRepo := repositories.NewRoles(storage)
-	pRepo := repositories.NewPermissions(storage)
-	providerBlankMock := oauth2.NewProviderBlankMock()
-	return usecases.NewServiceAccounts(saRepo, rRepo, pRepo, providerBlankMock)
-}
-
-func getServicesUseCase(t *testing.T) usecases.Services {
-	t.Helper()
-	storage := helpers.GetStorage(t)
-	sRepo := repositories.NewServices(storage)
-	saUC := getServiceAccountsUseCase(t)
-	return usecases.NewServices(sRepo, saUC)
-}
-
 func TestServicesCreateHandler(t *testing.T) {
 	beforeEachServices(t)
-	saUC := getServiceAccountsUseCase(t)
+	saUC := helpers.GetServiceAccountsUseCase(t)
 	sa := &models.ServiceAccount{
 		Name:  "any",
 		Email: "any@email.com",
@@ -74,7 +53,7 @@ func TestServicesCreateHandler(t *testing.T) {
 		t.Errorf("Expected 201. Got %d", rec.Code)
 		return
 	}
-	sUC := getServicesUseCase(t)
+	sUC := helpers.GetServicesUseCase(t)
 	ss, err := sUC.All()
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err.Error())

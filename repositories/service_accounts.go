@@ -23,9 +23,7 @@ type serviceAccounts struct {
 }
 
 func (sas *serviceAccounts) Clone() ServiceAccounts {
-	c := &serviceAccounts{}
-	c.setStorage(sas.storage.Clone())
-	return c
+	return NewServiceAccounts(sas.storage.Clone())
 }
 
 func (sas serviceAccounts) Get(id string) (*models.ServiceAccount, error) {

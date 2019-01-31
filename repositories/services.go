@@ -15,9 +15,7 @@ type services struct {
 }
 
 func (ss *services) Clone() Services {
-	c := &services{}
-	c.setStorage(ss.storage.Clone())
-	return c
+	return NewServices(ss.storage.Clone())
 }
 
 func (ss services) Create(s *models.Service) error {

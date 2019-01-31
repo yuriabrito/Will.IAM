@@ -67,15 +67,30 @@ func GetStorage(t *testing.T) *repositories.Storage {
 	return s
 }
 
+// GetRepo return an instance of *repositories.All
+func GetRepo(t *testing.T) *repositories.All {
+	t.Helper()
+	return repositories.New(GetStorage(t))
+}
+
+// GetRolesUseCase returns a usecases.Roles
+func GetRolesUseCase(t *testing.T) usecases.Roles {
+	t.Helper()
+	return usecases.NewRoles(GetRepo(t))
+}
+
 // GetServiceAccountsUseCase returns a usecases.ServiceAccounts
 func GetServiceAccountsUseCase(t *testing.T) usecases.ServiceAccounts {
 	t.Helper()
-	storage := GetStorage(t)
-	saRepo := repositories.NewServiceAccounts(storage)
-	rRepo := repositories.NewRoles(storage)
-	pRepo := repositories.NewPermissions(storage)
+	repo := GetRepo(t)
 	providerBlankMock := oauth2.NewProviderBlankMock()
-	return usecases.NewServiceAccounts(saRepo, rRepo, pRepo, providerBlankMock)
+	return usecases.NewServiceAccounts(repo, providerBlankMock)
+}
+
+// GetServicesUseCase returns a usecases.Services
+func GetServicesUseCase(t *testing.T) usecases.Services {
+	t.Helper()
+	return usecases.NewServices(GetRepo(t), GetServiceAccountsUseCase(t))
 }
 
 // CreateRootServiceAccount creates a root service account with root access
@@ -94,13 +109,4 @@ func CreateRootServiceAccount(t *testing.T) *models.ServiceAccount {
 		panic(err)
 	}
 	return rootSA
-}
-
-// GetRolesUseCase returns a usecases.Roles
-func GetRolesUseCase(t *testing.T) usecases.Roles {
-	t.Helper()
-	storage := GetStorage(t)
-	rsRepo := repositories.NewRoles(storage)
-	psRepo := repositories.NewPermissions(storage)
-	return usecases.NewRoles(rsRepo, psRepo)
 }

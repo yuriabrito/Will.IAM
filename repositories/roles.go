@@ -25,9 +25,7 @@ type roles struct {
 }
 
 func (rs *roles) Clone() Roles {
-	c := &roles{}
-	c.setStorage(rs.storage.Clone())
-	return c
+	return NewRoles(rs.storage.Clone())
 }
 
 func (rs roles) GetServiceAccounts(

@@ -17,9 +17,10 @@ func NewStorage() *Storage {
 
 // Clone storage
 func (s *Storage) Clone() *Storage {
-	var pg *pg.Client
-	*pg = *s.PG
-	// TODO: copy DB interface
+	pg := &pg.Client{}
+	if s.PG != nil {
+		*pg = *s.PG
+	}
 	return &Storage{PG: pg}
 }
 
