@@ -45,20 +45,33 @@ func NewServiceAccounts(
 }
 
 func (sas serviceAccounts) Create(sa *models.ServiceAccount) error {
-	// TODO: pass tx to repo create -> service_accounts + roles + role_bindings
+	repo, err := sas.repo.WithPGTx()
+	if err != nil {
+		return err
+	}
+	defer repo.PGTxRollback()
+	if err := createServiceAccount(sa, repo); err != nil {
+		return err
+	}
+	return repo.PGTxCommit()
+}
+
+func createServiceAccount(
+	sa *models.ServiceAccount, repo *repositories.All,
+) error {
 	sa.ID = uuid.Must(uuid.NewV4()).String()
 	r := &models.Role{
 		Name:       fmt.Sprintf("service-account:%s", sa.ID),
 		IsBaseRole: true,
 	}
-	if err := sas.repo.Roles.Create(r); err != nil {
+	if err := repo.Roles.Create(r); err != nil {
 		return err
 	}
 	sa.BaseRoleID = r.ID
-	if err := sas.repo.ServiceAccounts.Create(sa); err != nil {
+	if err := repo.ServiceAccounts.Create(sa); err != nil {
 		return err
 	}
-	if err := sas.repo.Roles.Bind(*r, *sa); err != nil {
+	if err := repo.Roles.Bind(*r, *sa); err != nil {
 		return err
 	}
 	return nil
