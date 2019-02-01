@@ -134,7 +134,7 @@ func (a *App) GetRouter() *mux.Router {
 		authenticationValidHandler(a.oauth2Provider, sasUC),
 	).Methods("GET").Name("ssoAuthValid")
 
-	ssUC := usecases.NewServices(repo, sasUC)
+	ssUC := usecases.NewServices(repo)
 	authMiddle := authMiddleware(sasUC)
 
 	r.Handle("/sso/auth",

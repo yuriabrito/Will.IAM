@@ -45,15 +45,9 @@ func NewServiceAccounts(
 }
 
 func (sas serviceAccounts) Create(sa *models.ServiceAccount) error {
-	repo, err := sas.repo.WithPGTx()
-	if err != nil {
-		return err
-	}
-	defer repo.PGTxRollback()
-	if err := createServiceAccount(sa, repo); err != nil {
-		return err
-	}
-	return repo.PGTxCommit()
+	return sas.repo.WithPGTx(func(repo *repositories.All) error {
+		return createServiceAccount(sa, repo)
+	})
 }
 
 func createServiceAccount(

@@ -90,7 +90,7 @@ func GetServiceAccountsUseCase(t *testing.T) usecases.ServiceAccounts {
 // GetServicesUseCase returns a usecases.Services
 func GetServicesUseCase(t *testing.T) usecases.Services {
 	t.Helper()
-	return usecases.NewServices(GetRepo(t), GetServiceAccountsUseCase(t))
+	return usecases.NewServices(GetRepo(t))
 }
 
 // CreateRootServiceAccount creates a root service account with root access
