@@ -30,7 +30,7 @@ func New(s *Storage) *All {
 
 // WithPGTx clones All and all its contents and injects a PG tx
 // in it's storage.PG.DB and in all inner repo storages
-func (a All) WithPGTx() (*All, error) {
+func (a *All) WithPGTx(fn func(repo *All) error) error {
 	c := &All{
 		Permissions:     a.Permissions.Clone(),
 		Roles:           a.Roles.Clone(),
@@ -39,9 +39,9 @@ func (a All) WithPGTx() (*All, error) {
 		Tokens:          a.Tokens.Clone(),
 		storage:         a.storage.Clone(),
 	}
-	tx, err := c.storage.PG.Begin(c.storage.PG.DB)
+	tx, err := a.storage.PG.Begin(a.storage.PG.DB)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	c.storage.PG.DB = tx
 	c.Permissions.setStorage(c.storage)
@@ -49,15 +49,11 @@ func (a All) WithPGTx() (*All, error) {
 	c.ServiceAccounts.setStorage(c.storage)
 	c.Services.setStorage(c.storage)
 	c.Tokens.setStorage(c.storage)
-	return c, nil
-}
 
-// PGTxCommit commits the tx in a.storage.PG.DB
-func (a *All) PGTxCommit() error {
-	return pg.Commit(a.storage.PG.DB)
-}
-
-// PGTxRollback does a rollback to the tx in a.storage.PG.DB
-func (a *All) PGTxRollback() error {
-	return pg.Rollback(a.storage.PG.DB)
+	defer pg.Rollback(c.storage.PG.DB)
+	err = fn(c)
+	if err == nil {
+		return pg.Commit(c.storage.PG.DB)
+	}
+	return nil
 }

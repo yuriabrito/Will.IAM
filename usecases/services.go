@@ -12,8 +12,7 @@ type Services interface {
 }
 
 type services struct {
-	repo  *repositories.All
-	sasUC ServiceAccounts
+	repo *repositories.All
 }
 
 // Create a new service with unique name and permission name
@@ -22,30 +21,39 @@ type services struct {
 func (ss services) Create(
 	service *models.Service, creatorServiceAccountID string,
 ) error {
-	// TODO: use tx
-	sa := models.BuildKeyPairServiceAccount(service.Name)
-	if err := ss.sasUC.Create(sa); err != nil {
+	creatorSA, err := ss.repo.ServiceAccounts.Get(creatorServiceAccountID)
+	if err != nil {
 		return err
 	}
-	service.ServiceAccountID = sa.ID
-	if err := ss.repo.Services.Create(service); err != nil {
-		return err
-	}
-	buildFullAccessPermission := func() *models.Permission {
-		return &models.Permission{
-			Service:           service.PermissionName,
-			OwnershipLevel:    models.OwnershipLevels.Owner,
-			Action:            models.Action("*"),
-			ResourceHierarchy: models.ResourceHierarchy("*"),
+	return ss.repo.WithPGTx(func(repo *repositories.All) error {
+		sa := models.BuildKeyPairServiceAccount(service.Name)
+		if err := createServiceAccount(sa, repo); err != nil {
+			return err
 		}
-	}
-	ss.sasUC.CreatePermission(
-		sa.ID, buildFullAccessPermission(),
-	)
-	ss.sasUC.CreatePermission(
-		creatorServiceAccountID, buildFullAccessPermission(),
-	)
-	return nil
+		service.ServiceAccountID = sa.ID
+		if err := ss.repo.Services.Create(service); err != nil {
+			return err
+		}
+		buildFullAccessPermissionForRoleID := func(
+			roleID string,
+		) *models.Permission {
+			return &models.Permission{
+				Service:           service.PermissionName,
+				OwnershipLevel:    models.OwnershipLevels.Owner,
+				Action:            models.Action("*"),
+				ResourceHierarchy: models.ResourceHierarchy("*"),
+				RoleID:            roleID,
+			}
+		}
+		// TODO: check if base_role_id is set in sa
+		repo.Permissions.Create(
+			buildFullAccessPermissionForRoleID(sa.BaseRoleID),
+		)
+		repo.Permissions.Create(
+			buildFullAccessPermissionForRoleID(creatorSA.BaseRoleID),
+		)
+		return nil
+	})
 }
 
 func (ss services) All() ([]models.Service, error) {
@@ -53,12 +61,6 @@ func (ss services) All() ([]models.Service, error) {
 }
 
 // NewServices services' ctor
-func NewServices(
-	repo *repositories.All,
-	sasUC ServiceAccounts,
-) Services {
-	return &services{
-		repo:  repo,
-		sasUC: sasUC,
-	}
+func NewServices(repo *repositories.All) Services {
+	return &services{repo: repo}
 }
