@@ -55,7 +55,7 @@ func authenticationExchangeCodeHandler(
 			Email:   authResult.Email,
 			Picture: authResult.Picture,
 		}
-		if err = sasUC.Create(sa); err != nil {
+		if err = sasUC.WithCtx(r.Context()).Create(sa); err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -89,7 +89,8 @@ func authenticationValidHandler(
 			)
 			return
 		}
-		authResult, err := sasUC.AuthenticateAccessToken(qs["accessToken"][0])
+		authResult, err := sasUC.WithCtx(r.Context()).
+			AuthenticateAccessToken(qs["accessToken"][0])
 		if err != nil {
 			l.Error(err)
 			v := url.Values{}

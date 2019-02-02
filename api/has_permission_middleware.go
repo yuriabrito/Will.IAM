@@ -24,7 +24,8 @@ func hasPermissionMiddlewareBuilder(
 			if id, ok := mux.Vars(r)["id"]; ok {
 				permission = strings.Replace(permission, "{id}", id, 0)
 			}
-			has, err := sasUC.HasPermissionString(saID, permission)
+			has, err := sasUC.WithCtx(r.Context()).
+				HasPermissionString(saID, permission)
 			if err != nil {
 				l.Error(err)
 				w.WriteHeader(http.StatusInternalServerError)

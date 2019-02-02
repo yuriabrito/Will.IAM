@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/ghostec/Will.IAM/models"
@@ -26,11 +27,17 @@ type ServiceAccounts interface {
 	List() ([]models.ServiceAccount, error)
 	Search(string) ([]models.ServiceAccount, error)
 	GetRoles(string) ([]models.Role, error)
+	WithCtx(context.Context) ServiceAccounts
 }
 
 type serviceAccounts struct {
 	repo           *repositories.All
+	ctx            context.Context
 	oauth2Provider oauth2.Provider
+}
+
+func (sas serviceAccounts) WithCtx(ctx context.Context) ServiceAccounts {
+	return &serviceAccounts{sas.repo.WithCtx(ctx), ctx, sas.oauth2Provider}
 }
 
 // NewServiceAccounts serviceAccounts ctor
@@ -45,7 +52,7 @@ func NewServiceAccounts(
 }
 
 func (sas serviceAccounts) Create(sa *models.ServiceAccount) error {
-	return sas.repo.WithPGTx(func(repo *repositories.All) error {
+	return sas.repo.WithPGTx(sas.ctx, func(repo *repositories.All) error {
 		return createServiceAccount(sa, repo)
 	})
 }

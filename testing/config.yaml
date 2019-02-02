@@ -1,3 +1,7 @@
+jaeger:
+  disabled: true
+  samplingProbability: 0.1
+  serviceName: Will.IAM
 extensions:
   pg:
     database: Will.IAM-test

@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -11,13 +12,18 @@ import (
 // AM define entrypoints for Access Management actions
 type AM interface {
 	List(prefix string) ([]models.AM, error)
+	WithCtx(context.Context) AM
 }
 
 type am struct {
 	rsUC Roles
 }
 
-func (am *am) List(prefix string) ([]models.AM, error) {
+func (am am) WithCtx(ctx context.Context) AM {
+	return NewAM(am.rsUC.WithCtx(ctx))
+}
+
+func (am am) List(prefix string) ([]models.AM, error) {
 	if !strings.Contains(prefix, "::") {
 		services, err := am.listServices(prefix)
 		if err != nil {
@@ -41,7 +47,7 @@ func (am *am) List(prefix string) ([]models.AM, error) {
 	return []models.AM{}, nil
 }
 
-func (am *am) listServices(prefix string) ([]string, error) {
+func (am am) listServices(prefix string) ([]string, error) {
 	svcs := []string{constants.AppInfo.Name}
 	filtered := []string{}
 	for i := range svcs {
@@ -52,7 +58,7 @@ func (am *am) listServices(prefix string) ([]string, error) {
 	return filtered, nil
 }
 
-func (am *am) listWillIAMPermissions(prefix string) ([]models.AM, error) {
+func (am am) listWillIAMPermissions(prefix string) ([]models.AM, error) {
 	parts := strings.Split(prefix, "::")
 	if len(parts) == 2 {
 		actions, err := am.listWillIAMActions(parts[1])
@@ -82,7 +88,7 @@ func (am *am) listWillIAMPermissions(prefix string) ([]models.AM, error) {
 	), nil
 }
 
-func (am *am) listWillIAMActions(prefix string) ([]string, error) {
+func (am am) listWillIAMActions(prefix string) ([]string, error) {
 	all := append(constants.RolesActions, constants.ServiceAccountsActions...)
 	keep := []string{}
 	for i := range all {
@@ -102,7 +108,7 @@ func actionsContains(actions []string, action string) bool {
 	return false
 }
 
-func (am *am) listWillIAMResourceHierarchies(
+func (am am) listWillIAMResourceHierarchies(
 	action, prefix string,
 ) ([]models.AM, error) {
 	if actionsContains(constants.RolesActions, action) {
@@ -117,7 +123,7 @@ func (am *am) listWillIAMResourceHierarchies(
 	return []models.AM{}, nil
 }
 
-func (am *am) listRolesActionsRH(
+func (am am) listRolesActionsRH(
 	action, prefix string,
 ) ([]models.AM, error) {
 	if action == "CreateRole" || action == "ListRoles" {

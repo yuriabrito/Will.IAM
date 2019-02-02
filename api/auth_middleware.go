@@ -24,7 +24,7 @@ func getServiceAccountID(ctx context.Context) (string, bool) {
 
 // authMiddleware authenticates either access_token or key pair
 func authMiddleware(
-	saUseCase usecases.ServiceAccounts,
+	sasUC usecases.ServiceAccounts,
 ) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +38,8 @@ func authMiddleware(
 			l := middleware.GetLogger(r.Context())
 			if parts[0] == "KeyPair" {
 				keyPair := strings.Split(parts[1], ":")
-				saID, err := saUseCase.AuthenticateKeyPair(keyPair[0], keyPair[1])
+				saID, err := sasUC.WithCtx(r.Context()).
+					AuthenticateKeyPair(keyPair[0], keyPair[1])
 				if err != nil {
 					l.Error(err)
 					w.WriteHeader(http.StatusInternalServerError)
@@ -47,7 +48,8 @@ func authMiddleware(
 				ctx = context.WithValue(r.Context(), serviceAccountIDCtxKey, saID)
 			} else if parts[0] == "Bearer" {
 				accessToken := parts[1]
-				accessTokenAuth, err := saUseCase.AuthenticateAccessToken(accessToken)
+				accessTokenAuth, err := sasUC.WithCtx(r.Context()).
+					AuthenticateAccessToken(accessToken)
 				if err != nil {
 					if err.Error() == "access token not found" {
 						w.WriteHeader(http.StatusUnauthorized)

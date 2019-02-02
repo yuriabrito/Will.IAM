@@ -1,6 +1,8 @@
 package usecases
 
 import (
+	"context"
+
 	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/repositories"
 )
@@ -15,10 +17,16 @@ type Roles interface {
 	GetServiceAccounts(string) ([]models.ServiceAccount, error)
 	WithNamePrefix(string, int) ([]models.Role, error)
 	List() ([]models.Role, error)
+	WithCtx(context.Context) Roles
 }
 
 type roles struct {
 	repo *repositories.All
+	ctx  context.Context
+}
+
+func (rs roles) WithCtx(ctx context.Context) Roles {
+	return &roles{rs.repo.WithCtx(ctx), ctx}
 }
 
 func (rs roles) Create(r *models.Role) error {
@@ -44,7 +52,7 @@ type RoleUpdate struct {
 }
 
 func (rs roles) Update(ru RoleUpdate) error {
-	return rs.repo.WithPGTx(func(repo *repositories.All) error {
+	return rs.repo.WithPGTx(rs.ctx, func(repo *repositories.All) error {
 		if err := repo.Roles.DropPermissions(ru.ID); err != nil {
 			return err
 		}

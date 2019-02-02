@@ -1,6 +1,8 @@
 package usecases
 
 import (
+	"context"
+
 	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/repositories"
 )
@@ -9,10 +11,16 @@ import (
 type Services interface {
 	All() ([]models.Service, error)
 	Create(*models.Service, string) error
+	WithCtx(context.Context) Services
 }
 
 type services struct {
 	repo *repositories.All
+	ctx  context.Context
+}
+
+func (ss services) WithCtx(ctx context.Context) Services {
+	return &services{ss.repo.WithCtx(ctx), ctx}
 }
 
 // Create a new service with unique name and permission name
@@ -25,7 +33,7 @@ func (ss services) Create(
 	if err != nil {
 		return err
 	}
-	return ss.repo.WithPGTx(func(repo *repositories.All) error {
+	return ss.repo.WithPGTx(ss.ctx, func(repo *repositories.All) error {
 		sa := models.BuildKeyPairServiceAccount(service.Name)
 		if err := createServiceAccount(sa, repo); err != nil {
 			return err

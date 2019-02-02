@@ -1,6 +1,8 @@
 package usecases
 
 import (
+	"context"
+
 	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/repositories"
 )
@@ -12,10 +14,16 @@ type Permissions interface {
 	Create(*models.Permission) error
 	CreateRequest(string, *models.PermissionRequest) error
 	GetPermissionRequests(string) ([]models.PermissionRequest, error)
+	WithCtx(context.Context) Permissions
 }
 
 type permissions struct {
 	repo *repositories.All
+	ctx  context.Context
+}
+
+func (ps permissions) WithCtx(ctx context.Context) Permissions {
+	return &permissions{ps.repo.WithCtx(ctx), ctx}
 }
 
 func (ps permissions) Get(id string) (*models.Permission, error) {

@@ -20,10 +20,14 @@ func NewStorage() *Storage {
 // Clone storage
 func (s *Storage) Clone() *Storage {
 	pg := &pg.Client{}
+	redis := &redis.Client{}
 	if s.PG != nil {
 		*pg = *s.PG
 	}
-	return &Storage{PG: pg}
+	if s.Redis != nil {
+		*redis = *s.Redis
+	}
+	return &Storage{PG: pg, Redis: redis}
 }
 
 type withStorage struct {

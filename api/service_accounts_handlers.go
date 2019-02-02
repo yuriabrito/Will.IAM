@@ -21,7 +21,7 @@ func serviceAccountsGetHandler(
 		// 	return
 		// }
 		saID := mux.Vars(r)["id"]
-		sa, err := sasUC.Get(saID)
+		sa, err := sasUC.WithCtx(r.Context()).Get(saID)
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -70,14 +70,14 @@ func serviceAccountsCreateHandler(
 					`{ "error": { "email": "required" } }`)
 				return
 			}
-			_, err = sasUC.CreateOAuth2Type(name, email)
+			_, err = sasUC.WithCtx(r.Context()).CreateOAuth2Type(name, email)
 			if err != nil {
 				l.Error(err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 		} else if authenticationType == "keypair" {
-			_, err = sasUC.CreateKeyPairType(name)
+			_, err = sasUC.WithCtx(r.Context()).CreateKeyPairType(name)
 			if err != nil {
 				l.Error(err)
 				w.WriteHeader(http.StatusInternalServerError)
@@ -97,7 +97,7 @@ func serviceAccountsListHandler(
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		l := middleware.GetLogger(r.Context())
-		saSl, err := sasUC.List()
+		saSl, err := sasUC.WithCtx(r.Context()).List()
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -123,7 +123,7 @@ func serviceAccountsSearchHandler(
 		if len(qs["permission"]) > 0 {
 			term = qs["permission"][0]
 		}
-		saSl, err := sasUC.Search(term)
+		saSl, err := sasUC.WithCtx(r.Context()).Search(term)
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)

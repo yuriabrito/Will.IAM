@@ -12,7 +12,7 @@ import (
 )
 
 func servicesCreateHandler(
-	servicesUseCase usecases.Services,
+	ssUC usecases.Services,
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		l := middleware.GetLogger(r.Context())
@@ -32,7 +32,7 @@ func servicesCreateHandler(
 			if !ok {
 				return fmt.Errorf("service_account_id not set in ctx")
 			}
-			if err := servicesUseCase.Create(service, saID); err != nil {
+			if err := ssUC.WithCtx(r.Context()).Create(service, saID); err != nil {
 				return err
 			}
 			return nil

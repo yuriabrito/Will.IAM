@@ -1,6 +1,7 @@
 package testing
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -60,8 +61,10 @@ func DoRequest(
 func GetStorage(t *testing.T) *repositories.Storage {
 	t.Helper()
 	s := repositories.NewStorage()
-	err := s.ConfigurePG(GetConfig(t))
-	if err != nil {
+	if err := s.ConfigurePG(GetConfig(t)); err != nil {
+		panic(err)
+	}
+	if err := s.ConfigureRedis(GetConfig(t)); err != nil {
 		panic(err)
 	}
 	return s
@@ -76,7 +79,7 @@ func GetRepo(t *testing.T) *repositories.All {
 // GetRolesUseCase returns a usecases.Roles
 func GetRolesUseCase(t *testing.T) usecases.Roles {
 	t.Helper()
-	return usecases.NewRoles(GetRepo(t))
+	return usecases.NewRoles(GetRepo(t)).WithCtx(context.Background())
 }
 
 // GetServiceAccountsUseCase returns a usecases.ServiceAccounts
@@ -84,13 +87,14 @@ func GetServiceAccountsUseCase(t *testing.T) usecases.ServiceAccounts {
 	t.Helper()
 	repo := GetRepo(t)
 	providerBlankMock := oauth2.NewProviderBlankMock()
-	return usecases.NewServiceAccounts(repo, providerBlankMock)
+	return usecases.NewServiceAccounts(repo, providerBlankMock).
+		WithCtx(context.Background())
 }
 
 // GetServicesUseCase returns a usecases.Services
 func GetServicesUseCase(t *testing.T) usecases.Services {
 	t.Helper()
-	return usecases.NewServices(GetRepo(t))
+	return usecases.NewServices(GetRepo(t)).WithCtx(context.Background())
 }
 
 // CreateRootServiceAccount creates a root service account with root access

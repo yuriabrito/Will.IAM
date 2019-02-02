@@ -14,6 +14,7 @@ import (
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"github.com/topfreegames/extensions/jaeger"
 	"github.com/topfreegames/extensions/middleware"
 )
 
@@ -56,6 +57,9 @@ func NewApp(
 }
 
 func (a *App) configureApp() error {
+	if err := a.configureJaeger(); err != nil {
+		return err
+	}
 	if err := a.configurePG(); err != nil {
 		return err
 	}
@@ -97,6 +101,19 @@ func (a *App) configureRedis() error {
 		return nil
 	}
 	return a.storage.ConfigureRedis(a.config)
+}
+
+func (a *App) configureJaeger() error {
+	opts := jaeger.Options{
+		Disabled:    a.config.GetBool("jaeger.disabled"),
+		Probability: a.config.GetFloat64("jaeger.samplingProbability"),
+		ServiceName: a.config.GetString("jaeger.serviceName"),
+	}
+	_, err := jaeger.Configure(opts)
+	if err != nil {
+		a.logger.WithError(err).Error("Failed to initialize Jaeger")
+	}
+	return err
 }
 
 func (a *App) configureGoogleOAuth2Provider() {
