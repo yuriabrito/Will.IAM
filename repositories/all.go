@@ -30,9 +30,9 @@ func New(s *Storage) *All {
 	}
 }
 
-// WithCtx clones All and all its contents and injects a context
+// WithContext clones All and all its contents and injects a context
 // in all storages
-func (a *All) WithCtx(ctx context.Context) *All {
+func (a *All) WithContext(ctx context.Context) *All {
 	s := a.storage.Clone()
 	s.PG.DB = pg.WithContext(ctx, s.PG.DB)
 	s.Redis.Client = s.Redis.Trace(ctx)

@@ -38,7 +38,7 @@ func authMiddleware(
 			l := middleware.GetLogger(r.Context())
 			if parts[0] == "KeyPair" {
 				keyPair := strings.Split(parts[1], ":")
-				saID, err := sasUC.WithCtx(r.Context()).
+				saID, err := sasUC.WithContext(r.Context()).
 					AuthenticateKeyPair(keyPair[0], keyPair[1])
 				if err != nil {
 					l.Error(err)
@@ -48,7 +48,7 @@ func authMiddleware(
 				ctx = context.WithValue(r.Context(), serviceAccountIDCtxKey, saID)
 			} else if parts[0] == "Bearer" {
 				accessToken := parts[1]
-				accessTokenAuth, err := sasUC.WithCtx(r.Context()).
+				accessTokenAuth, err := sasUC.WithContext(r.Context()).
 					AuthenticateAccessToken(accessToken)
 				if err != nil {
 					if err.Error() == "access token not found" {

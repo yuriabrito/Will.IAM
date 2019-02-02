@@ -30,7 +30,7 @@ func rolesCreatePermissionHandler(
 		sameP.OwnershipLevel = models.OwnershipLevels.Owner
 
 		saID, _ := getServiceAccountID(r.Context())
-		has, err := sasUC.WithCtx(r.Context()).
+		has, err := sasUC.WithContext(r.Context()).
 			HasPermissionString(saID, sameP.String())
 		if err != nil {
 			l.Error(err)
@@ -47,7 +47,7 @@ func rolesCreatePermissionHandler(
 			Write(w, http.StatusBadRequest, `{"error": "querystrings.permission malformed"}`)
 			return
 		}
-		err = rsUC.WithCtx(r.Context()).CreatePermission(rID, &p)
+		err = rsUC.WithContext(r.Context()).CreatePermission(rID, &p)
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -83,7 +83,7 @@ func rolesUpdateHandler(
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		has, err := sasUC.WithCtx(r.Context()).
+		has, err := sasUC.WithContext(r.Context()).
 			HasAllOwnerPermissions(saID, ru.Permissions)
 		if err != nil {
 			l.WithError(err).Error("rolesUpdateHandler sasUC.HasAllOwnerPermissionsStrings")
@@ -98,7 +98,7 @@ func rolesUpdateHandler(
 			return
 		}
 		ru.ID = mux.Vars(r)["id"]
-		if err = rsUC.WithCtx(r.Context()).Update(ru); err != nil {
+		if err = rsUC.WithContext(r.Context()).Update(ru); err != nil {
 			l.WithError(err).Error("rolesUpdateHandler rsUC.Update")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -114,7 +114,7 @@ func rolesListHandler(
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		l := middleware.GetLogger(r.Context())
-		rsSl, err := rsUC.WithCtx(r.Context()).List()
+		rsSl, err := rsUC.WithContext(r.Context()).List()
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -151,7 +151,7 @@ func rolesCreateHandler(
 			return
 		}
 		role := &models.Role{Name: name, IsBaseRole: false}
-		err = rsUC.WithCtx(r.Context()).Create(role)
+		err = rsUC.WithContext(r.Context()).Create(role)
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -167,7 +167,7 @@ func rolesViewHandler(
 	return func(w http.ResponseWriter, r *http.Request) {
 		l := middleware.GetLogger(r.Context())
 		id := mux.Vars(r)["id"]
-		rsUCc := rsUC.WithCtx(r.Context())
+		rsUCc := rsUC.WithContext(r.Context())
 		role, err := rsUCc.Get(id)
 		if err != nil {
 			l.WithError(err).Error("rolesViewHandler rsUC.Get")

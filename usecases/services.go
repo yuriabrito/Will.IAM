@@ -11,7 +11,7 @@ import (
 type Services interface {
 	List() ([]models.Service, error)
 	Create(*models.Service, string) error
-	WithCtx(context.Context) Services
+	WithContext(context.Context) Services
 }
 
 type services struct {
@@ -19,8 +19,8 @@ type services struct {
 	ctx  context.Context
 }
 
-func (ss services) WithCtx(ctx context.Context) Services {
-	return &services{ss.repo.WithCtx(ctx), ctx}
+func (ss services) WithContext(ctx context.Context) Services {
+	return &services{ss.repo.WithContext(ctx), ctx}
 }
 
 // Create a new service with unique name and permission name

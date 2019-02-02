@@ -17,7 +17,7 @@ type Roles interface {
 	GetServiceAccounts(string) ([]models.ServiceAccount, error)
 	WithNamePrefix(string, int) ([]models.Role, error)
 	List() ([]models.Role, error)
-	WithCtx(context.Context) Roles
+	WithContext(context.Context) Roles
 }
 
 type roles struct {
@@ -25,8 +25,8 @@ type roles struct {
 	ctx  context.Context
 }
 
-func (rs roles) WithCtx(ctx context.Context) Roles {
-	return &roles{rs.repo.WithCtx(ctx), ctx}
+func (rs roles) WithContext(ctx context.Context) Roles {
+	return &roles{rs.repo.WithContext(ctx), ctx}
 }
 
 func (rs roles) Create(r *models.Role) error {

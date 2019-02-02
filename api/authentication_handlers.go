@@ -24,7 +24,7 @@ func authenticationBuildURLHandler(
 			)
 			return
 		}
-		authURL := provider.BuildAuthURL(qs["referer"][0])
+		authURL := provider.WithContext(r.Context()).BuildAuthURL(qs["referer"][0])
 		http.Redirect(w, r, authURL, http.StatusSeeOther)
 	}
 }
@@ -44,7 +44,7 @@ func authenticationExchangeCodeHandler(
 			return
 		}
 		code := qs["code"][0]
-		authResult, err := provider.ExchangeCode(code)
+		authResult, err := provider.WithContext(r.Context()).ExchangeCode(code)
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -55,7 +55,7 @@ func authenticationExchangeCodeHandler(
 			Email:   authResult.Email,
 			Picture: authResult.Picture,
 		}
-		if err = sasUC.WithCtx(r.Context()).Create(sa); err != nil {
+		if err = sasUC.WithContext(r.Context()).Create(sa); err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -70,7 +70,7 @@ func authenticationExchangeCodeHandler(
 }
 
 func authenticationValidHandler(
-	provider oauth2.Provider, sasUC usecases.ServiceAccounts,
+	sasUC usecases.ServiceAccounts,
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		l := middleware.GetLogger(r.Context())
@@ -89,7 +89,7 @@ func authenticationValidHandler(
 			)
 			return
 		}
-		authResult, err := sasUC.WithCtx(r.Context()).
+		authResult, err := sasUC.WithContext(r.Context()).
 			AuthenticateAccessToken(qs["accessToken"][0])
 		if err != nil {
 			l.Error(err)

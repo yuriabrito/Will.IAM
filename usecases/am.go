@@ -12,15 +12,15 @@ import (
 // AM define entrypoints for Access Management actions
 type AM interface {
 	List(prefix string) ([]models.AM, error)
-	WithCtx(context.Context) AM
+	WithContext(context.Context) AM
 }
 
 type am struct {
 	rsUC Roles
 }
 
-func (am am) WithCtx(ctx context.Context) AM {
-	return NewAM(am.rsUC.WithCtx(ctx))
+func (am am) WithContext(ctx context.Context) AM {
+	return NewAM(am.rsUC.WithContext(ctx))
 }
 
 func (am am) List(prefix string) ([]models.AM, error) {

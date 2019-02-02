@@ -27,7 +27,7 @@ type ServiceAccounts interface {
 	List() ([]models.ServiceAccount, error)
 	Search(string) ([]models.ServiceAccount, error)
 	GetRoles(string) ([]models.Role, error)
-	WithCtx(context.Context) ServiceAccounts
+	WithContext(context.Context) ServiceAccounts
 }
 
 type serviceAccounts struct {
@@ -36,8 +36,10 @@ type serviceAccounts struct {
 	oauth2Provider oauth2.Provider
 }
 
-func (sas serviceAccounts) WithCtx(ctx context.Context) ServiceAccounts {
-	return &serviceAccounts{sas.repo.WithCtx(ctx), ctx, sas.oauth2Provider}
+func (sas serviceAccounts) WithContext(ctx context.Context) ServiceAccounts {
+	return &serviceAccounts{
+		sas.repo.WithContext(ctx), ctx, sas.oauth2Provider.WithContext(ctx),
+	}
 }
 
 // NewServiceAccounts serviceAccounts ctor
@@ -86,7 +88,6 @@ func createServiceAccount(
 func (sas serviceAccounts) CreateKeyPairType(
 	saName string,
 ) (*models.ServiceAccount, error) {
-	// TODO: pass tx to repo create -> service_accounts + roles + role_bindings
 	saKP := models.BuildKeyPairServiceAccount(saName)
 	if err := sas.Create(saKP); err != nil {
 		return nil, err

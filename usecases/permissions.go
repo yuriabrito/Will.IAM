@@ -14,7 +14,7 @@ type Permissions interface {
 	Create(*models.Permission) error
 	CreateRequest(string, *models.PermissionRequest) error
 	GetPermissionRequests(string) ([]models.PermissionRequest, error)
-	WithCtx(context.Context) Permissions
+	WithContext(context.Context) Permissions
 }
 
 type permissions struct {
@@ -22,8 +22,8 @@ type permissions struct {
 	ctx  context.Context
 }
 
-func (ps permissions) WithCtx(ctx context.Context) Permissions {
-	return &permissions{ps.repo.WithCtx(ctx), ctx}
+func (ps permissions) WithContext(ctx context.Context) Permissions {
+	return &permissions{ps.repo.WithContext(ctx), ctx}
 }
 
 func (ps permissions) Get(id string) (*models.Permission, error) {

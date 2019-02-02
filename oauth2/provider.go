@@ -1,5 +1,7 @@
 package oauth2
 
+import "context"
+
 // AuthResult is the result of a successful authentication
 type AuthResult struct {
 	AccessToken string `json:"accessToken"`
@@ -12,6 +14,7 @@ type Provider interface {
 	BuildAuthURL(string) string
 	ExchangeCode(string) (*AuthResult, error)
 	Authenticate(string) (*AuthResult, error)
+	WithContext(context.Context) Provider
 }
 
 // ProviderBlankMock is a Provider mock will all dummy implementations
@@ -47,4 +50,9 @@ func (p *ProviderBlankMock) Authenticate(any string) (*AuthResult, error) {
 		AccessToken: any,
 		Email:       email,
 	}, nil
+}
+
+// WithContext does nothing
+func (p *ProviderBlankMock) WithContext(ctx context.Context) Provider {
+	return p
 }

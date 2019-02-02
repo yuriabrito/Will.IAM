@@ -18,7 +18,7 @@ func permissionsDeleteHandler(
 	return func(w http.ResponseWriter, r *http.Request) {
 		l := middleware.GetLogger(r.Context())
 		pID := mux.Vars(r)["id"]
-		p, err := psUC.WithCtx(r.Context()).Get(pID)
+		p, err := psUC.WithContext(r.Context()).Get(pID)
 		if err != nil {
 			// TODO: use appropriate errors
 			if err.Error() == fmt.Sprintf("permission %s not found", pID) {
@@ -30,7 +30,7 @@ func permissionsDeleteHandler(
 		}
 		p.OwnershipLevel = models.OwnershipLevels.Owner
 		saID, _ := getServiceAccountID(r.Context())
-		has, err := sasUC.WithCtx(r.Context()).HasPermissionString(saID, p.String())
+		has, err := sasUC.WithContext(r.Context()).HasPermissionString(saID, p.String())
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -40,7 +40,7 @@ func permissionsDeleteHandler(
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
-		err = psUC.WithCtx(r.Context()).Delete(pID)
+		err = psUC.WithContext(r.Context()).Delete(pID)
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -71,7 +71,7 @@ func permissionsCreatePermissionRequestHandler(
 		}
 
 		saID, _ := getServiceAccountID(r.Context())
-		has, err := sasUC.WithCtx(r.Context()).
+		has, err := sasUC.WithContext(r.Context()).
 			HasPermissionString(saID, pr.ToLenderString())
 		if err != nil {
 			l.Error(err)
@@ -85,7 +85,7 @@ func permissionsCreatePermissionRequestHandler(
 
 		// TODO: check if there's a request with state = Created already NoContent
 
-		err = psUC.WithCtx(r.Context()).CreateRequest(saID, pr)
+		err = psUC.WithContext(r.Context()).CreateRequest(saID, pr)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -100,7 +100,7 @@ func permissionsGetPermissionRequestsHandler(
 	return func(w http.ResponseWriter, r *http.Request) {
 		l := middleware.GetLogger(r.Context())
 		saID, _ := getServiceAccountID(r.Context())
-		prs, err := psUC.WithCtx(r.Context()).GetPermissionRequests(saID)
+		prs, err := psUC.WithContext(r.Context()).GetPermissionRequests(saID)
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -130,7 +130,7 @@ func permissionsHasHandler(
 		}
 		saID, _ := getServiceAccountID(r.Context())
 		has, err :=
-			sasUC.WithCtx(r.Context()).HasPermissionString(saID, permissionSl[0])
+			sasUC.WithContext(r.Context()).HasPermissionString(saID, permissionSl[0])
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)

@@ -1,6 +1,7 @@
 package oauth2
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/repositories"
+	extensionsHttp "github.com/topfreegames/extensions/http"
 )
 
 const tokenEndpoint = "https://www.googleapis.com/oauth2/v4/token"
@@ -41,9 +43,9 @@ func mapToQueryStrings(m map[string]string) string {
 
 // Google implements Provider
 type Google struct {
-	config           GoogleConfig
-	tokensRepository repositories.Tokens
-	client           *http.Client
+	config GoogleConfig
+	repo   *repositories.All
+	client *http.Client
 }
 
 // BuildAuthURL returns an URL authenticate with Google
@@ -91,7 +93,7 @@ func (g *Google) ExchangeCode(code string) (*AuthResult, error) {
 		)
 	}
 	t.Email = userInfo.Email
-	if err := g.tokensRepository.Save(t); err != nil {
+	if err := g.repo.Tokens.Save(t); err != nil {
 		return nil, err
 	}
 	return &AuthResult{
@@ -203,7 +205,7 @@ func (g *Google) maybeRefresh(t *models.Token) (*userInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = g.tokensRepository.Save(t); err != nil {
+	if err = g.repo.Tokens.Save(t); err != nil {
 		return nil, err
 	}
 	return userInfo, nil
@@ -211,7 +213,7 @@ func (g *Google) maybeRefresh(t *models.Token) (*userInfo, error) {
 
 // Authenticate verifies if an accessToken is valid and maybe refresh it
 func (g *Google) Authenticate(accessToken string) (*AuthResult, error) {
-	t, err := g.tokensRepository.Get(accessToken)
+	t, err := g.repo.Tokens.Get(accessToken)
 	if err != nil {
 		return nil, err
 	}
@@ -232,13 +234,18 @@ func (g *Google) Authenticate(accessToken string) (*AuthResult, error) {
 	return authResult, nil
 }
 
+// WithContext returns a new instance of *Google using ctx
+func (g Google) WithContext(ctx context.Context) Provider {
+	return NewGoogle(g.config, g.repo.WithContext(ctx))
+}
+
 // NewGoogle ctor
 func NewGoogle(
-	config GoogleConfig, tokensRepository repositories.Tokens,
+	config GoogleConfig, repo *repositories.All,
 ) *Google {
 	return &Google{
-		config:           config,
-		tokensRepository: tokensRepository,
-		client:           &http.Client{},
+		config: config,
+		repo:   repo,
+		client: extensionsHttp.New(),
 	}
 }

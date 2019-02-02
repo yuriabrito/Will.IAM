@@ -118,13 +118,13 @@ func (a *App) configureJaeger() error {
 }
 
 func (a *App) configureGoogleOAuth2Provider() {
-	tokensRepo := repositories.NewTokens(a.storage)
+	repo := repositories.New(a.storage)
 	google := oauth2.NewGoogle(oauth2.GoogleConfig{
 		ClientID:      a.config.GetString("oauth2.google.clientId"),
 		ClientSecret:  a.config.GetString("oauth2.google.clientSecret"),
 		RedirectURL:   a.config.GetString("oauth2.google.redirectUrl"),
 		HostedDomains: a.config.GetStringSlice("oauth2.google.hostedDomains"),
-	}, tokensRepo)
+	}, repo)
 	a.oauth2Provider = google
 }
 
@@ -158,7 +158,7 @@ func (a *App) GetRouter() *mux.Router {
 	).Methods("GET").Name("ssoAuthDone")
 
 	r.HandleFunc("/sso/auth/valid",
-		authenticationValidHandler(a.oauth2Provider, sasUC),
+		authenticationValidHandler(sasUC),
 	).Methods("GET").Name("ssoAuthValid")
 
 	ssUC := usecases.NewServices(repo)

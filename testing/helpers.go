@@ -79,7 +79,7 @@ func GetRepo(t *testing.T) *repositories.All {
 // GetRolesUseCase returns a usecases.Roles
 func GetRolesUseCase(t *testing.T) usecases.Roles {
 	t.Helper()
-	return usecases.NewRoles(GetRepo(t)).WithCtx(context.Background())
+	return usecases.NewRoles(GetRepo(t)).WithContext(context.Background())
 }
 
 // GetServiceAccountsUseCase returns a usecases.ServiceAccounts
@@ -88,13 +88,13 @@ func GetServiceAccountsUseCase(t *testing.T) usecases.ServiceAccounts {
 	repo := GetRepo(t)
 	providerBlankMock := oauth2.NewProviderBlankMock()
 	return usecases.NewServiceAccounts(repo, providerBlankMock).
-		WithCtx(context.Background())
+		WithContext(context.Background())
 }
 
 // GetServicesUseCase returns a usecases.Services
 func GetServicesUseCase(t *testing.T) usecases.Services {
 	t.Helper()
-	return usecases.NewServices(GetRepo(t)).WithCtx(context.Background())
+	return usecases.NewServices(GetRepo(t)).WithContext(context.Background())
 }
 
 // CreateRootServiceAccount creates a root service account with root access

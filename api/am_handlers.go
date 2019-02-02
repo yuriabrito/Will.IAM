@@ -19,7 +19,7 @@ func amListHandler(
 		if len(prefixSl) != 0 {
 			prefix = prefixSl[0]
 		}
-		results, err := amUC.WithCtx(r.Context()).List(prefix)
+		results, err := amUC.WithContext(r.Context()).List(prefix)
 		if err != nil {
 			l.WithError(err).Error("usecases.AM.List error")
 			w.WriteHeader(http.StatusInternalServerError)
