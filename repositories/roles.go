@@ -12,10 +12,12 @@ type Roles interface {
 	ForServiceAccountID(string) ([]models.Role, error)
 	Create(*models.Role) error
 	Update(*models.Role) error
-	Bind(models.Role, models.ServiceAccount) error
+	Bind(*models.RoleBinding) error
 	WithNamePrefix(string, int) ([]models.Role, error)
 	List() ([]models.Role, error)
 	Get(string) (*models.Role, error)
+	DropPermissions(string) error
+	DropBindings(string) error
 	Clone() Roles
 	setStorage(*Storage)
 }
@@ -77,11 +79,7 @@ func (rs roles) Update(r *models.Role) error {
 	return err
 }
 
-func (rs roles) Bind(r models.Role, sa models.ServiceAccount) error {
-	rb := &models.RoleBinding{
-		RoleID:           r.ID,
-		ServiceAccountID: sa.ID,
-	}
+func (rs roles) Bind(rb *models.RoleBinding) error {
 	_, err := rs.storage.PG.DB.Exec(
 		`INSERT INTO role_bindings (role_id, service_account_id)
 		VALUES (?role_id, ?service_account_id)`, rb,
@@ -124,6 +122,20 @@ func (rs roles) Get(id string) (*models.Role, error) {
 		return nil, fmt.Errorf("role %s not found", id)
 	}
 	return r, nil
+}
+
+func (rs roles) DropPermissions(roleID string) error {
+	_, err := rs.storage.PG.DB.Exec(
+		`DELETE FROM permissions WHERE role_id = ?`, roleID,
+	)
+	return err
+}
+
+func (rs roles) DropBindings(roleID string) error {
+	_, err := rs.storage.PG.DB.Exec(
+		`DELETE FROM role_bindings WHERE role_id = ?`, roleID,
+	)
+	return err
 }
 
 // NewRoles roles ctor

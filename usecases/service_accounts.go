@@ -65,7 +65,10 @@ func createServiceAccount(
 	if err := repo.ServiceAccounts.Create(sa); err != nil {
 		return err
 	}
-	if err := repo.Roles.Bind(*r, *sa); err != nil {
+	if err := repo.Roles.Bind(&models.RoleBinding{
+		RoleID:           r.ID,
+		ServiceAccountID: sa.ID,
+	}); err != nil {
 		return err
 	}
 	return nil

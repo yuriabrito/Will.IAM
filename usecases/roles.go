@@ -5,15 +5,6 @@ import (
 	"github.com/ghostec/Will.IAM/repositories"
 )
 
-// RoleUpdate is the required data to update a role
-type RoleUpdate struct {
-	ID                 string              `json:"-"`
-	Name               string              `json:"name"`
-	PermissionsStrings []string            `json:"permissions"`
-	Permissions        []models.Permission `json:"-"`
-	ServiceAccountsIDs []string            `json:"service_accounts_ids"`
-}
-
 // Roles define entrypoints for ServiceAccount actions
 type Roles interface {
 	Create(r *models.Role) error
@@ -36,18 +27,47 @@ func (rs roles) Create(r *models.Role) error {
 
 func (rs roles) CreatePermission(roleID string, p *models.Permission) error {
 	p.RoleID = roleID
-	return rs.repo.Permissions.Create(p)
+	return createPermission(rs.repo, p)
+}
+
+func createPermission(repo *repositories.All, p *models.Permission) error {
+	return repo.Permissions.Create(p)
+}
+
+// RoleUpdate is the required data to update a role
+type RoleUpdate struct {
+	ID                 string              `json:"-"`
+	Name               string              `json:"name"`
+	PermissionsStrings []string            `json:"permissions"`
+	Permissions        []models.Permission `json:"-"`
+	ServiceAccountsIDs []string            `json:"serviceAccountsIds"`
 }
 
 func (rs roles) Update(ru RoleUpdate) error {
-	// TODO: use tx
-	for i := range ru.Permissions {
-		if err := rs.CreatePermission(ru.ID, &ru.Permissions[i]); err != nil {
+	return rs.repo.WithPGTx(func(repo *repositories.All) error {
+		if err := repo.Roles.DropPermissions(ru.ID); err != nil {
 			return err
 		}
-	}
-	role := &models.Role{ID: ru.ID, Name: ru.Name}
-	return rs.repo.Roles.Update(role)
+		for i := range ru.Permissions {
+			ru.Permissions[i].RoleID = ru.ID
+			if err := createPermission(repo, &ru.Permissions[i]); err != nil {
+				return err
+			}
+		}
+		if err := repo.Roles.DropBindings(ru.ID); err != nil {
+			return err
+		}
+		for i := range ru.ServiceAccountsIDs {
+			if err := repo.Roles.Bind(&models.RoleBinding{
+				RoleID:           ru.ID,
+				ServiceAccountID: ru.ServiceAccountsIDs[i],
+			}); err != nil {
+				return err
+			}
+		}
+		role := &models.Role{ID: ru.ID, Name: ru.Name}
+		return repo.Roles.Update(role)
+	})
 }
 
 func (rs roles) GetPermissions(roleID string) ([]models.Permission, error) {
