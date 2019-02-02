@@ -1,13 +1,19 @@
 package repositories
 
 import (
+	"encoding/json"
 	"fmt"
+	"time"
 
+	"github.com/ghostec/Will.IAM/constants"
 	"github.com/ghostec/Will.IAM/models"
+	"github.com/go-redis/redis"
 )
 
 // Tokens contract
 type Tokens interface {
+	FromCache(string) (*models.AccessTokenAuth, error)
+	ToCache(*models.AccessTokenAuth) error
 	Get(string) (*models.Token, error)
 	Save(*models.Token) error
 	Clone() Tokens
@@ -20,6 +26,45 @@ type tokens struct {
 
 func (ts *tokens) Clone() Tokens {
 	return NewTokens(ts.storage.Clone())
+}
+
+func buildTokenCacheKey(accessToken string) string {
+	return fmt.Sprintf("accessToken-%s", accessToken)
+}
+
+func (ts tokens) ToCache(auth *models.AccessTokenAuth) error {
+	if !constants.TokensCacheEnabled {
+		return nil
+	}
+	bts, err := json.Marshal(auth)
+	if err != nil {
+		return err
+	}
+	return ts.storage.Redis.Client.Set(
+		buildTokenCacheKey(auth.AccessToken), bts,
+		time.Duration(constants.TokensCacheTTL)*time.Second,
+	).Err()
+}
+
+func (ts tokens) FromCache(
+	accessToken string,
+) (*models.AccessTokenAuth, error) {
+	if !constants.TokensCacheEnabled {
+		return nil, nil
+	}
+	res := ts.storage.Redis.Client.Get(buildTokenCacheKey(accessToken))
+	bts, err := res.Bytes()
+	if err != nil && err == redis.Nil {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	auth := &models.AccessTokenAuth{}
+	if err := json.Unmarshal(bts, &auth); err != nil {
+		return nil, err
+	}
+	return auth, nil
 }
 
 func (ts tokens) Get(accessToken string) (*models.Token, error) {

@@ -17,13 +17,13 @@ setup-project:
 	@dep ensure
 
 deps:
-	@mkdir -p docker_data && docker-compose up -d postgres
+	@mkdir -p docker_data && docker-compose up -d postgres redis
 	@until docker exec $(pg_dep) pg_isready; do echo 'Waiting Postgres...' && sleep 1; done
 	@docker exec $(pg_dep) createuser -s -U postgres $(project) 2>/dev/null || true
 	@docker exec $(pg_dep) createdb -U $(project) $(project) 2>/dev/null || true
 
 deps-test:
-	@mkdir -p docker_data && docker-compose up -d postgres
+	@mkdir -p docker_data && docker-compose up -d postgres redis
 	@until docker exec $(pg_dep) pg_isready; do echo 'Waiting Postgres...' && sleep 1; done
 	@docker exec $(pg_dep) createuser -s -U postgres $(project) 2>/dev/null || true
 	@docker exec $(pg_dep) createdb -U $(project) $(project_test) 2>/dev/null || true

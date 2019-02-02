@@ -13,3 +13,11 @@ type Token struct {
 	Email          string    `json:"email" pg:"email"`
 	CreatedUpdatedAt
 }
+
+// AccessTokenAuth stores a ServiceAccountID and the (maybe refreshed)
+// AccessToken
+type AccessTokenAuth struct {
+	ServiceAccountID string
+	AccessToken      string
+	Email            string
+}

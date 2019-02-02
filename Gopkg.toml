@@ -32,3 +32,6 @@
   name = "github.com/topfreegames/extensions"
   version = "=v6.5.3"
 
+[[override]]
+  name = "github.com/go-redis/redis"
+  version = "=v6.13.2"

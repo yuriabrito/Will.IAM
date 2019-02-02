@@ -14,7 +14,7 @@ type ServiceAccounts interface {
 	Create(*models.ServiceAccount) error
 	CreateKeyPairType(string) (*models.ServiceAccount, error)
 	CreateOAuth2Type(string, string) (*models.ServiceAccount, error)
-	AuthenticateAccessToken(string) (*AccessTokenAuth, error)
+	AuthenticateAccessToken(string) (*models.AccessTokenAuth, error)
 	AuthenticateKeyPair(string, string) (string, error)
 	HasPermissionString(string, string) (bool, error)
 	HasAllOwnerPermissions(string, []models.Permission) (bool, error)
@@ -137,18 +137,17 @@ func (sas serviceAccounts) Search(
 	return saSl, nil
 }
 
-// AccessTokenAuth stores a ServiceAccountID and the (maybe refreshed)
-// AccessToken
-type AccessTokenAuth struct {
-	ServiceAccountID string
-	AccessToken      string
-	Email            string
-}
-
 // AuthenticateAccessToken verifies if token is valid for email, and sometimes refreshes it
 func (sas *serviceAccounts) AuthenticateAccessToken(
 	accessToken string,
-) (*AccessTokenAuth, error) {
+) (*models.AccessTokenAuth, error) {
+	auth, err := sas.repo.Tokens.FromCache(accessToken)
+	if err != nil {
+		return nil, err
+	}
+	if auth != nil {
+		return auth, nil
+	}
 	authResult, err := sas.oauth2Provider.Authenticate(accessToken)
 	if err != nil {
 		return nil, err
@@ -173,11 +172,20 @@ func (sas *serviceAccounts) AuthenticateAccessToken(
 	}
 	if err != nil && err.Error() == saNotFoundErr {
 	}
-	return &AccessTokenAuth{
+	auth = &models.AccessTokenAuth{
 		ServiceAccountID: sa.ID,
 		AccessToken:      authResult.AccessToken,
 		Email:            authResult.Email,
-	}, nil
+	}
+	authWithFirstAccessToken := &models.AccessTokenAuth{
+		ServiceAccountID: sa.ID,
+		AccessToken:      accessToken,
+		Email:            authResult.Email,
+	}
+	if err := sas.repo.Tokens.ToCache(authWithFirstAccessToken); err != nil {
+		return nil, err
+	}
+	return auth, nil
 }
 
 // AuthenticateKeyPair verifies if key pair is valid

@@ -56,8 +56,10 @@ func NewApp(
 }
 
 func (a *App) configureApp() error {
-	err := a.configurePG()
-	if err != nil {
+	if err := a.configurePG(); err != nil {
+		return err
+	}
+	if err := a.configureRedis(); err != nil {
 		return err
 	}
 
@@ -88,6 +90,13 @@ func (a *App) configurePG() error {
 		return nil
 	}
 	return a.storage.ConfigurePG(a.config)
+}
+
+func (a *App) configureRedis() error {
+	if a.storage != nil && a.storage.Redis != nil {
+		return nil
+	}
+	return a.storage.ConfigureRedis(a.config)
 }
 
 func (a *App) configureGoogleOAuth2Provider() {
