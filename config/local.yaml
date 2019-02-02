@@ -1,6 +1,6 @@
 jaeger:
-  disabled: true
-  samplingProbability: 0.1
+  disabled: false
+  samplingProbability: 1
   serviceName: Will.IAM
 oauth2:
   google:

@@ -16,6 +16,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/topfreegames/extensions/jaeger"
 	"github.com/topfreegames/extensions/middleware"
+	"github.com/topfreegames/extensions/router"
 )
 
 // App struct
@@ -134,7 +135,7 @@ func (a *App) SetOAuth2Provider(provider oauth2.Provider) {
 
 // GetRouter returns App's *mux.Router reference
 func (a *App) GetRouter() *mux.Router {
-	r := mux.NewRouter()
+	r := router.NewRouter()
 	r.Use(middleware.Version(constants.AppInfo.Version))
 	r.Use(middleware.Logging(a.logger))
 	r.Use(middleware.Metrics(a.metricsReporter))

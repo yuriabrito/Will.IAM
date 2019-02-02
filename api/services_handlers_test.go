@@ -53,8 +53,8 @@ func TestServicesCreateHandler(t *testing.T) {
 		t.Errorf("Expected 201. Got %d", rec.Code)
 		return
 	}
-	sUC := helpers.GetServicesUseCase(t)
-	ss, err := sUC.All()
+	ssUC := helpers.GetServicesUseCase(t)
+	ss, err := ssUC.List()
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err.Error())
 		return
