@@ -9,7 +9,7 @@ import (
 
 // Services contract
 type Services interface {
-	All() ([]models.Service, error)
+	List() ([]models.Service, error)
 	Create(*models.Service, string) error
 	WithCtx(context.Context) Services
 }
@@ -64,8 +64,8 @@ func (ss services) Create(
 	})
 }
 
-func (ss services) All() ([]models.Service, error) {
-	return ss.repo.Services.All()
+func (ss services) List() ([]models.Service, error) {
+	return ss.repo.Services.List()
 }
 
 // NewServices services' ctor

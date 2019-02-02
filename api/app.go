@@ -174,6 +174,14 @@ func (a *App) GetRouter() *mux.Router {
 	r.Handle(
 		"/services",
 		authMiddle(http.HandlerFunc(
+			servicesListHandler(ssUC),
+		)),
+	).
+		Methods("GET").Name("servicesListHandler")
+
+	r.Handle(
+		"/services",
+		authMiddle(http.HandlerFunc(
 			servicesCreateHandler(ssUC),
 		)),
 	).

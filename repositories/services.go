@@ -4,7 +4,7 @@ import "github.com/ghostec/Will.IAM/models"
 
 // Services repository
 type Services interface {
-	All() ([]models.Service, error)
+	List() ([]models.Service, error)
 	Create(*models.Service) error
 	Clone() Services
 	setStorage(*Storage)
@@ -28,8 +28,8 @@ func (ss services) Create(s *models.Service) error {
 	return err
 }
 
-// All returns all services in storage
-func (ss services) All() ([]models.Service, error) {
+// List returns all services in storage
+func (ss services) List() ([]models.Service, error) {
 	var allServices []models.Service
 	if _, err := ss.storage.PG.DB.Query(
 		&allServices, `SELECT * FROM services`,
