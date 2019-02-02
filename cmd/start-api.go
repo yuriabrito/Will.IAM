@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/ghostec/Will.IAM/api"
+	"github.com/ghostec/Will.IAM/constants"
 	"github.com/ghostec/Will.IAM/utils"
 	"github.com/spf13/cobra"
 )
@@ -12,6 +13,7 @@ var startAPICmd = &cobra.Command{
 	Short: "starts the api",
 	Long:  `starts the api.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		constants.Set(config)
 		log := utils.GetLogger(bind, port, verbose, json)
 		log.Info("starting Will.IAM")
 		app, err := api.NewApp(bind, port, config, log, nil)

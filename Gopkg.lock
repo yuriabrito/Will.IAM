@@ -26,6 +26,14 @@
   version = "v8"
 
 [[projects]]
+  digest = "1:4b0d3367477f903ca3ff99881873c78f7d58fffb287d282a72959c6db7b1df24"
+  name = "github.com/bsm/redis-lock"
+  packages = ["."]
+  pruneopts = ""
+  revision = "0a3c01f764b4864e340afce6ffa26c97da6927bb"
+  version = "v6.0.0"
+
+[[projects]]
   branch = "master"
   digest = "1:c46fd324e7902268373e1b337436a6377c196e2dbd7b35624c6256d29d494e78"
   name = "github.com/codahale/hdrhistogram"
@@ -55,6 +63,23 @@
   pruneopts = ""
   revision = "2cb96043eb15699002a72c64f2b38d62cf6e4bc0"
   version = "v6.12.0"
+
+[[projects]]
+  digest = "1:a6cdfb0c4a4d3e0893e52d305685fff4c79b9199dcbf8f29b11218a0da761b70"
+  name = "github.com/go-redis/redis"
+  packages = [
+    ".",
+    "internal",
+    "internal/consistenthash",
+    "internal/hashtag",
+    "internal/pool",
+    "internal/proto",
+    "internal/singleflight",
+    "internal/util",
+  ]
+  pruneopts = ""
+  revision = "480db94d33e6088e08d628833b6c0705451d24bb"
+  version = "v6.13.2"
 
 [[projects]]
   digest = "1:660175e70abad3868119f2c29f43339608d7d3b93c8eb178b812ed330be6c07b"
@@ -257,10 +282,13 @@
     "dogstatsd",
     "jaeger",
     "jaeger/pg",
+    "jaeger/redis",
     "middleware",
     "oauth2",
     "pg",
     "pg/interfaces",
+    "redis",
+    "redis/interfaces",
   ]
   pruneopts = ""
   revision = "3380a4808f4610a2083992038102df3cd90878c7"
@@ -390,7 +418,6 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/go-pg/pg",
     "github.com/gofrs/uuid",
     "github.com/gorilla/mux",
     "github.com/rs/cors",
@@ -399,6 +426,7 @@
     "github.com/spf13/viper",
     "github.com/topfreegames/extensions/middleware",
     "github.com/topfreegames/extensions/pg",
+    "github.com/topfreegames/extensions/redis",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

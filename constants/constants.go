@@ -1,5 +1,7 @@
 package constants
 
+import "github.com/spf13/viper"
+
 // Metrics constants
 var Metrics = struct {
 	ResponseTime string
@@ -14,4 +16,16 @@ var AppInfo = struct {
 }{
 	Name:    "Will.IAM",
 	Version: "1.0",
+}
+
+// constants from config
+var (
+	TokensCacheTTL     int
+	TokensCacheEnabled bool
+)
+
+// Set is called at start.Run
+func Set(config *viper.Viper) {
+	TokensCacheTTL = config.GetInt("tokens.cacheTTL")
+	TokensCacheEnabled = config.GetBool("tokens.enabled")
 }

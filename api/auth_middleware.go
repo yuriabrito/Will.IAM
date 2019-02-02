@@ -58,7 +58,9 @@ func authMiddleware(
 					return
 				}
 				w.Header().Set("x-email", accessTokenAuth.Email)
-				w.Header().Set("x-access-token", accessTokenAuth.AccessToken)
+				if accessTokenAuth.AccessToken != accessToken {
+					w.Header().Set("x-access-token", accessTokenAuth.AccessToken)
+				}
 				ctx = context.WithValue(
 					r.Context(), serviceAccountIDCtxKey, accessTokenAuth.ServiceAccountID,
 				)

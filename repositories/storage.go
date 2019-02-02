@@ -2,12 +2,14 @@ package repositories
 
 import (
 	"github.com/topfreegames/extensions/pg"
+	"github.com/topfreegames/extensions/redis"
 )
 
 // Storage holds pointers to storage engines used by
 // repositories
 type Storage struct {
-	PG *pg.Client
+	PG    *pg.Client
+	Redis *redis.Client
 }
 
 // NewStorage ctor

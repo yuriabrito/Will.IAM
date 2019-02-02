@@ -31,7 +31,7 @@ func (ss services) Create(
 			return err
 		}
 		service.ServiceAccountID = sa.ID
-		if err := ss.repo.Services.Create(service); err != nil {
+		if err := repo.Services.Create(service); err != nil {
 			return err
 		}
 		buildFullAccessPermissionForRoleID := func(
