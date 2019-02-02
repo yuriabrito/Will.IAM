@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cespare/xxhash"
 	"github.com/ghostec/Will.IAM/constants"
 	"github.com/ghostec/Will.IAM/models"
 	"github.com/go-redis/redis"
@@ -29,7 +30,7 @@ func (ts *tokens) Clone() Tokens {
 }
 
 func buildTokenCacheKey(accessToken string) string {
-	return fmt.Sprintf("accessToken-%s", accessToken)
+	return fmt.Sprintf("accessToken-%d", xxhash.Sum64String(accessToken))
 }
 
 func (ts tokens) ToCache(auth *models.AccessTokenAuth) error {

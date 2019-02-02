@@ -34,6 +34,14 @@
   version = "v6.0.0"
 
 [[projects]]
+  digest = "1:f6485831252319cd6ca29fc170adecf1eb81bf1e805f62f44eb48564ce2485fe"
+  name = "github.com/cespare/xxhash"
+  packages = ["."]
+  pruneopts = ""
+  revision = "3b82fb7d186719faeedd0c2864f868c74fbf79a1"
+  version = "v2.0.0"
+
+[[projects]]
   branch = "master"
   digest = "1:c46fd324e7902268373e1b337436a6377c196e2dbd7b35624c6256d29d494e78"
   name = "github.com/codahale/hdrhistogram"
@@ -289,6 +297,7 @@
     "pg/interfaces",
     "redis",
     "redis/interfaces",
+    "router",
   ]
   pruneopts = ""
   revision = "3380a4808f4610a2083992038102df3cd90878c7"
@@ -418,15 +427,19 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/cespare/xxhash",
+    "github.com/go-redis/redis",
     "github.com/gofrs/uuid",
     "github.com/gorilla/mux",
     "github.com/rs/cors",
     "github.com/sirupsen/logrus",
     "github.com/spf13/cobra",
     "github.com/spf13/viper",
+    "github.com/topfreegames/extensions/jaeger",
     "github.com/topfreegames/extensions/middleware",
     "github.com/topfreegames/extensions/pg",
     "github.com/topfreegames/extensions/redis",
+    "github.com/topfreegames/extensions/router",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
