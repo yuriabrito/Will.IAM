@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/ghostec/Will.IAM/errors"
 	"github.com/ghostec/Will.IAM/usecases"
 	"github.com/topfreegames/extensions/middleware"
 )
@@ -51,7 +52,7 @@ func authMiddleware(
 				accessTokenAuth, err := sasUC.WithContext(r.Context()).
 					AuthenticateAccessToken(accessToken)
 				if err != nil {
-					if err.Error() == "access token not found" {
+					if _, ok := err.(*errors.EntityNotFoundError); ok {
 						w.WriteHeader(http.StatusUnauthorized)
 						return
 					}
