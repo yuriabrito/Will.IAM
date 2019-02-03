@@ -10,7 +10,9 @@ import (
 // Services contract
 type Services interface {
 	List() ([]models.Service, error)
+	Get(string) (*models.Service, error)
 	Create(*models.Service) error
+	Update(*models.Service) error
 	WithContext(context.Context) Services
 }
 
@@ -63,6 +65,14 @@ func (ss services) Create(service *models.Service) error {
 
 func (ss services) List() ([]models.Service, error) {
 	return ss.repo.Services.List()
+}
+
+func (ss services) Get(id string) (*models.Service, error) {
+	return ss.repo.Services.Get(id)
+}
+
+func (ss services) Update(service *models.Service) error {
+	return ss.repo.Services.Update(service)
 }
 
 // NewServices services' ctor

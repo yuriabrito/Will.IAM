@@ -5,7 +5,9 @@ import "github.com/ghostec/Will.IAM/models"
 // Services repository
 type Services interface {
 	List() ([]models.Service, error)
+	Get(string) (*models.Service, error)
 	Create(*models.Service) error
+	Update(*models.Service) error
 	Clone() Services
 	setStorage(*Storage)
 }
@@ -37,6 +39,25 @@ func (ss services) List() ([]models.Service, error) {
 		return nil, err
 	}
 	return allServices, nil
+}
+
+// Get service
+func (ss services) Get(id string) (*models.Service, error) {
+	s := new(models.Service)
+	if _, err := ss.storage.PG.DB.Query(
+		s, `SELECT * FROM services WHERE id = ?`, id,
+	); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func (ss services) Update(s *models.Service) error {
+	_, err := ss.storage.PG.DB.Exec(
+		`UPDATE services SET name = ?name, permission_name = ?permission_name,
+		am_url = ?am_url WHERE id = ?id`, s,
+	)
+	return err
 }
 
 // NewServices services ctor

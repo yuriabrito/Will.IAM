@@ -183,6 +183,16 @@ func (a *App) GetRouter() *mux.Router {
 	hasPermissionMiddle := hasPermissionMiddlewareBuilder(sasUC)
 
 	r.Handle(
+		"/services/{id}",
+		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
+			"EditService", "{id}",
+		), http.HandlerFunc(
+			servicesGetHandler(ssUC),
+		))),
+	).
+		Methods("GET").Name("servicesGetHandler")
+
+	r.Handle(
 		"/services",
 		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
 			"CreateServices", "*",
@@ -191,6 +201,16 @@ func (a *App) GetRouter() *mux.Router {
 		))),
 	).
 		Methods("POST").Name("servicesCreateHandler")
+
+	r.Handle(
+		"/services/{id}",
+		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
+			"EditService", "{id}",
+		), http.HandlerFunc(
+			servicesUpdateHandler(ssUC),
+		))),
+	).
+		Methods("PUT").Name("servicesUpdateHandler")
 
 	r.Handle(
 		"/service_accounts",
