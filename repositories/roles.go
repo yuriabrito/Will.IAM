@@ -3,6 +3,7 @@ package repositories
 import (
 	"fmt"
 
+	"github.com/ghostec/Will.IAM/errors"
 	"github.com/ghostec/Will.IAM/models"
 )
 
@@ -119,7 +120,7 @@ func (rs roles) Get(id string) (*models.Role, error) {
 		return nil, err
 	}
 	if r.ID == "" {
-		return nil, fmt.Errorf("role %s not found", id)
+		return nil, errors.NewEntityNotFoundError(models.Role{}, id)
 	}
 	return r, nil
 }

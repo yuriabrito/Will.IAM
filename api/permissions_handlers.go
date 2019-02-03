@@ -2,10 +2,10 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
+	"github.com/ghostec/Will.IAM/errors"
 	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/usecases"
 	"github.com/gorilla/mux"
@@ -20,8 +20,7 @@ func permissionsDeleteHandler(
 		pID := mux.Vars(r)["id"]
 		p, err := psUC.WithContext(r.Context()).Get(pID)
 		if err != nil {
-			// TODO: use appropriate errors
-			if err.Error() == fmt.Sprintf("permission %s not found", pID) {
+			if _, ok := err.(*errors.EntityNotFoundError); ok {
 				w.WriteHeader(http.StatusNoContent)
 				return
 			}

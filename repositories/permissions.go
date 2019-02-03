@@ -1,8 +1,7 @@
 package repositories
 
 import (
-	"fmt"
-
+	"github.com/ghostec/Will.IAM/errors"
 	"github.com/ghostec/Will.IAM/models"
 )
 
@@ -37,7 +36,7 @@ action, resource_hierarchy FROM permissions
 	); err != nil {
 		return nil, err
 	} else if info.RowsReturned() == 0 {
-		return nil, fmt.Errorf("permission %s not found", id)
+		return nil, errors.NewEntityNotFoundError(models.Permission{}, id)
 	}
 	return p, nil
 }
