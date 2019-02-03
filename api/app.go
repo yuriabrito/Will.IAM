@@ -180,15 +180,17 @@ func (a *App) GetRouter() *mux.Router {
 	).
 		Methods("GET").Name("servicesListHandler")
 
+	hasPermissionMiddle := hasPermissionMiddlewareBuilder(sasUC)
+
 	r.Handle(
 		"/services",
-		authMiddle(http.HandlerFunc(
+		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
+			"CreateServices", "*",
+		), http.HandlerFunc(
 			servicesCreateHandler(ssUC),
-		)),
+		))),
 	).
 		Methods("POST").Name("servicesCreateHandler")
-
-	hasPermissionMiddle := hasPermissionMiddlewareBuilder(sasUC)
 
 	r.Handle(
 		"/service_accounts",

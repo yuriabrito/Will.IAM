@@ -10,3 +10,15 @@ type Service struct {
 	AMURL                   string `json:"amUrl" sql:"am_url"`
 	CreatedUpdatedAt
 }
+
+// Validate Service model
+func (s Service) Validate(fields ...string) Validation {
+	v := &Validation{}
+	if s.Name == "" {
+		v.AddError("name", "required")
+	}
+	if s.PermissionName == "" {
+		v.AddError("permissionName", "required")
+	}
+	return *v
+}

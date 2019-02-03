@@ -5,6 +5,7 @@ package api_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -23,6 +24,7 @@ func beforeEachServices(t *testing.T) {
 
 func TestServicesCreateHandler(t *testing.T) {
 	beforeEachServices(t)
+	rootSA := helpers.CreateRootServiceAccount(t)
 	saUC := helpers.GetServiceAccountsUseCase(t)
 	sa := &models.ServiceAccount{
 		Name:  "any",
@@ -47,7 +49,9 @@ func TestServicesCreateHandler(t *testing.T) {
 		return
 	}
 	req, _ := http.NewRequest("POST", "/services", bytes.NewBuffer(bts))
-	req.Header.Set("Authorization", "Bearer dummy_access_token")
+	req.Header.Set("Authorization", fmt.Sprintf(
+		"KeyPair %s:%s", rootSA.KeyID, rootSA.KeySecret,
+	))
 	rec := helpers.DoRequest(t, req, app.GetRouter())
 	if rec.Code != http.StatusCreated {
 		t.Errorf("Expected 201. Got %d", rec.Code)

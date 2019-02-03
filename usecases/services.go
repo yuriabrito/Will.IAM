@@ -10,7 +10,7 @@ import (
 // Services contract
 type Services interface {
 	List() ([]models.Service, error)
-	Create(*models.Service, string) error
+	Create(*models.Service) error
 	WithContext(context.Context) Services
 }
 
@@ -26,10 +26,8 @@ func (ss services) WithContext(ctx context.Context) Services {
 // Create a new service with unique name and permission name
 // Also creates an associate Service Account with full access
 // and attributes full access to creator
-func (ss services) Create(
-	service *models.Service, creatorServiceAccountID string,
-) error {
-	creatorSA, err := ss.repo.ServiceAccounts.Get(creatorServiceAccountID)
+func (ss services) Create(service *models.Service) error {
+	creatorSA, err := ss.repo.ServiceAccounts.Get(service.CreatorServiceAccountID)
 	if err != nil {
 		return err
 	}
@@ -53,7 +51,6 @@ func (ss services) Create(
 				RoleID:            roleID,
 			}
 		}
-		// TODO: check if base_role_id is set in sa
 		repo.Permissions.Create(
 			buildFullAccessPermissionForRoleID(sa.BaseRoleID),
 		)

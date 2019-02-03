@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -37,28 +36,29 @@ func servicesCreateHandler(
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		l := middleware.GetLogger(r.Context())
-		if err := func() error {
-			body, err := ioutil.ReadAll(r.Body)
-			defer r.Body.Close()
-			if err != nil {
-				return err
-			}
-			service := &models.Service{}
-			err = json.Unmarshal(body, service)
-			if err != nil {
-				return err
-			}
-			// TODO: check if user has William::RL::CreateService::*
-			saID, ok := getServiceAccountID(r.Context())
-			if !ok {
-				return fmt.Errorf("service_account_id not set in ctx")
-			}
-			if err := ssUC.WithContext(r.Context()).Create(service, saID); err != nil {
-				return err
-			}
-			return nil
-		}(); err != nil {
-			l.Error(err)
+		body, err := ioutil.ReadAll(r.Body)
+		defer r.Body.Close()
+		if err != nil {
+			l.WithError(err).Error("servicesCreateHandler ioutil.ReadAll failed")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		service := &models.Service{}
+		err = json.Unmarshal(body, service)
+		if err != nil {
+			l.WithError(err).Error("servicesCreateHandler json.Unmarshal failed")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		v := service.Validate()
+		if !v.Valid() {
+			WriteBytes(w, http.StatusUnprocessableEntity, v.Errors())
+			return
+		}
+		saID, _ := getServiceAccountID(r.Context())
+		service.CreatorServiceAccountID = saID
+		if err := ssUC.WithContext(r.Context()).Create(service); err != nil {
+			l.WithError(err).Error("servicesCreateHandler ssUC.Create failed")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
