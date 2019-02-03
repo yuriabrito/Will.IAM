@@ -7,6 +7,7 @@ import (
 
 	"github.com/cespare/xxhash"
 	"github.com/ghostec/Will.IAM/constants"
+	"github.com/ghostec/Will.IAM/errors"
 	"github.com/ghostec/Will.IAM/models"
 	"github.com/go-redis/redis"
 )
@@ -77,7 +78,7 @@ func (ts tokens) Get(accessToken string) (*models.Token, error) {
 		return nil, err
 	}
 	if t.AccessToken == "" {
-		return nil, fmt.Errorf("access token not found")
+		return nil, errors.NewEntityNotFoundError(models.Token{}, accessToken)
 	}
 	return t, nil
 }

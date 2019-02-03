@@ -166,7 +166,7 @@ func (sas *serviceAccounts) AuthenticateAccessToken(
 	}
 	sa, err := sas.repo.ServiceAccounts.ForEmail(authResult.Email)
 	if _, ok := err.(*errors.EntityNotFoundError); ok {
-		sa := &models.ServiceAccount{
+		sa = &models.ServiceAccount{
 			Name:    authResult.Email,
 			Email:   authResult.Email,
 			Picture: authResult.Picture,
