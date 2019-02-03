@@ -15,11 +15,6 @@ func serviceAccountsGetHandler(
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		l := middleware.GetLogger(r.Context())
-		// qs := r.URL.Query()
-		// withRoles := qs["withRoles"]
-		// if len(withRoles) == 1 {
-		// 	return
-		// }
 		saID := mux.Vars(r)["id"]
 		sa, err := sasUC.WithContext(r.Context()).Get(saID)
 		if err != nil {
@@ -27,12 +22,12 @@ func serviceAccountsGetHandler(
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		data := map[string]string{
-			"id":         sa.ID,
-			"name":       sa.Name,
-			"baseRoleId": sa.BaseRoleID,
+		bts, err := keepJSONFieldsBytes(sa, "id", "name", "email")
+		if err != nil {
+			l.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
-		bts, err := json.Marshal(data)
 		WriteBytes(w, 200, bts)
 	}
 }
