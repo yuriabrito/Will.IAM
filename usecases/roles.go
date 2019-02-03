@@ -9,9 +9,9 @@ import (
 
 // Roles define entrypoints for ServiceAccount actions
 type Roles interface {
-	Create(r *models.Role) error
+	Create(*RoleWithNested) error
 	CreatePermission(string, *models.Permission) error
-	Update(RoleUpdate) error
+	Update(*RoleWithNested) error
 	Get(string) (*models.Role, error)
 	GetPermissions(string) ([]models.Permission, error)
 	GetServiceAccounts(string) ([]models.ServiceAccount, error)
@@ -29,8 +29,29 @@ func (rs roles) WithContext(ctx context.Context) Roles {
 	return &roles{rs.repo.WithContext(ctx), ctx}
 }
 
-func (rs roles) Create(r *models.Role) error {
-	return rs.repo.Roles.Create(r)
+func (rs roles) Create(rwn *RoleWithNested) error {
+	return rs.repo.WithPGTx(rs.ctx, func(repo *repositories.All) error {
+		role := &models.Role{Name: rwn.Name}
+		if err := repo.Roles.Create(role); err != nil {
+			return err
+		}
+		rwn.ID = role.ID
+		for i := range rwn.Permissions {
+			rwn.Permissions[i].RoleID = role.ID
+			if err := createPermission(repo, &rwn.Permissions[i]); err != nil {
+				return err
+			}
+		}
+		for i := range rwn.ServiceAccountsIDs {
+			if err := repo.Roles.Bind(&models.RoleBinding{
+				RoleID:           role.ID,
+				ServiceAccountID: rwn.ServiceAccountsIDs[i],
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 func (rs roles) CreatePermission(roleID string, p *models.Permission) error {
@@ -42,8 +63,8 @@ func createPermission(repo *repositories.All, p *models.Permission) error {
 	return repo.Permissions.Create(p)
 }
 
-// RoleUpdate is the required data to update a role
-type RoleUpdate struct {
+// RoleWithNested is the required data to update a role
+type RoleWithNested struct {
 	ID                 string              `json:"-"`
 	Name               string              `json:"name"`
 	PermissionsStrings []string            `json:"permissions"`
@@ -51,29 +72,38 @@ type RoleUpdate struct {
 	ServiceAccountsIDs []string            `json:"serviceAccountsIds"`
 }
 
-func (rs roles) Update(ru RoleUpdate) error {
+// Validate RoleWithNested fields
+func (rwn RoleWithNested) Validate() models.Validation {
+	v := &models.Validation{}
+	if rwn.Name == "" {
+		v.AddError("name", "required")
+	}
+	return *v
+}
+
+func (rs roles) Update(rwn *RoleWithNested) error {
 	return rs.repo.WithPGTx(rs.ctx, func(repo *repositories.All) error {
-		if err := repo.Roles.DropPermissions(ru.ID); err != nil {
+		if err := repo.Roles.DropPermissions(rwn.ID); err != nil {
 			return err
 		}
-		for i := range ru.Permissions {
-			ru.Permissions[i].RoleID = ru.ID
-			if err := createPermission(repo, &ru.Permissions[i]); err != nil {
+		for i := range rwn.Permissions {
+			rwn.Permissions[i].RoleID = rwn.ID
+			if err := createPermission(repo, &rwn.Permissions[i]); err != nil {
 				return err
 			}
 		}
-		if err := repo.Roles.DropBindings(ru.ID); err != nil {
+		if err := repo.Roles.DropBindings(rwn.ID); err != nil {
 			return err
 		}
-		for i := range ru.ServiceAccountsIDs {
+		for i := range rwn.ServiceAccountsIDs {
 			if err := repo.Roles.Bind(&models.RoleBinding{
-				RoleID:           ru.ID,
-				ServiceAccountID: ru.ServiceAccountsIDs[i],
+				RoleID:           rwn.ID,
+				ServiceAccountID: rwn.ServiceAccountsIDs[i],
 			}); err != nil {
 				return err
 			}
 		}
-		role := &models.Role{ID: ru.ID, Name: ru.Name}
+		role := &models.Role{ID: rwn.ID, Name: rwn.Name}
 		return repo.Roles.Update(role)
 	})
 }

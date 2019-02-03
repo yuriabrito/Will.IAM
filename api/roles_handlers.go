@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/ghostec/Will.IAM/errors"
 	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/usecases"
 	"github.com/gorilla/mux"
@@ -57,54 +58,63 @@ func rolesCreatePermissionHandler(
 	}
 }
 
+func processRoleWithNestedFromReq(
+	r *http.Request, sasUC usecases.ServiceAccounts,
+) (*usecases.RoleWithNested, error) {
+	body, err := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+	rwn := &usecases.RoleWithNested{}
+	err = json.Unmarshal(body, rwn)
+	if err != nil {
+		return nil, err
+	}
+	saID, _ := getServiceAccountID(r.Context())
+	rwn.Permissions, err = models.BuildPermissions(rwn.PermissionsStrings)
+	if err != nil {
+		return nil, err
+	}
+	has, err := sasUC.WithContext(r.Context()).
+		HasAllOwnerPermissions(saID, rwn.Permissions)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, errors.NewUserDoesntHaveAllPermissionsError()
+	}
+	return rwn, nil
+}
+
 func rolesUpdateHandler(
 	sasUC usecases.ServiceAccounts, rsUC usecases.Roles,
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		l := middleware.GetLogger(r.Context())
-		body, err := ioutil.ReadAll(r.Body)
-		defer r.Body.Close()
+		rwn, err := processRoleWithNestedFromReq(r, sasUC)
 		if err != nil {
-			l.WithError(err).Error("rolesUpdateHandler ioutil.ReadAll(body)")
-			w.WriteHeader(http.StatusInternalServerError)
+			statusCode := http.StatusInternalServerError
+			if _, ok := err.(*errors.UserDoesntHaveAllPermissionsError); ok {
+				statusCode = err.(*errors.UserDoesntHaveAllPermissionsError).
+					StatusCode()
+			}
+			l.WithError(err).Error("rolesUpdateHandler processRoleWithNestedFromReq")
+			w.WriteHeader(statusCode)
 			return
 		}
-		ru := usecases.RoleUpdate{}
-		err = json.Unmarshal(body, &ru)
-		if err != nil {
-			l.WithError(err).Error("rolesUpdateHandler json.Unmarshal(body)")
-			Write(w, http.StatusBadRequest, `{"error": "body malformed"}`)
+		v := rwn.Validate()
+		if !v.Valid() {
+			WriteBytes(w, http.StatusUnprocessableEntity, v.Errors())
 			return
 		}
-		saID, _ := getServiceAccountID(r.Context())
-		ru.Permissions, err = models.BuildPermissions(ru.PermissionsStrings)
-		if err != nil {
-			l.WithError(err).Error("rolesUpdateHandler models.BuildPermissions")
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		has, err := sasUC.WithContext(r.Context()).
-			HasAllOwnerPermissions(saID, ru.Permissions)
-		if err != nil {
-			l.WithError(err).Error("rolesUpdateHandler sasUC.HasAllOwnerPermissionsStrings")
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		if !has {
-			Write(
-				w, http.StatusForbidden,
-				`{ "error": "not owner of all permissions" }`,
-			)
-			return
-		}
-		ru.ID = mux.Vars(r)["id"]
-		if err = rsUC.WithContext(r.Context()).Update(ru); err != nil {
+		rwn.ID = mux.Vars(r)["id"]
+		if err = rsUC.WithContext(r.Context()).Update(rwn); err != nil {
 			l.WithError(err).Error("rolesUpdateHandler rsUC.Update")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		// TODO: audit
-		// TODO: GetPermissions and delete diff
 		w.WriteHeader(http.StatusOK)
 	}
 }
@@ -131,27 +141,27 @@ func rolesListHandler(
 }
 
 func rolesCreateHandler(
-	rsUC usecases.Roles,
+	sasUC usecases.ServiceAccounts, rsUC usecases.Roles,
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		l := middleware.GetLogger(r.Context())
-		body, err := ioutil.ReadAll(r.Body)
-		defer r.Body.Close()
+		rwn, err := processRoleWithNestedFromReq(r, sasUC)
 		if err != nil {
-			l.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
+			statusCode := http.StatusInternalServerError
+			if _, ok := err.(errors.ErrorWithStatusCode); ok {
+				statusCode = err.(errors.ErrorWithStatusCode).
+					StatusCode()
+			}
+			l.WithError(err).Error("rolesUpdateHandler processRoleWithNestedFromReq")
+			w.WriteHeader(statusCode)
 			return
 		}
-		m := map[string]interface{}{}
-		err = json.Unmarshal(body, &m)
-		name, ok := m["name"].(string)
-		if !ok || name == "" {
-			Write(w, http.StatusUnprocessableEntity,
-				`{ "error": { "name": "required" } }`)
+		v := rwn.Validate()
+		if !v.Valid() {
+			WriteBytes(w, http.StatusUnprocessableEntity, v.Errors())
 			return
 		}
-		role := &models.Role{Name: name, IsBaseRole: false}
-		err = rsUC.WithContext(r.Context()).Create(role)
+		err = rsUC.WithContext(r.Context()).Create(rwn)
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -161,7 +171,7 @@ func rolesCreateHandler(
 	}
 }
 
-func rolesViewHandler(
+func rolesGetHandler(
 	rsUC usecases.Roles,
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {

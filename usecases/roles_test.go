@@ -7,6 +7,7 @@ import (
 
 	"github.com/ghostec/Will.IAM/models"
 	helpers "github.com/ghostec/Will.IAM/testing"
+	"github.com/ghostec/Will.IAM/usecases"
 )
 
 func beforeEachRoles(t *testing.T) {
@@ -26,12 +27,12 @@ func TestRolesCreatePermission(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err.Error())
 	}
-	r := &models.Role{Name: "Test role name"}
-	if err := rsUC.Create(r); err != nil {
+	rwn := &usecases.RoleWithNested{Name: "Test role name"}
+	if err := rsUC.Create(rwn); err != nil {
 		t.Errorf("Unexpected error: %s", err.Error())
 	}
-	p.RoleID = r.ID
-	if err := rsUC.CreatePermission(r.ID, &p); err != nil {
+	p.RoleID = rwn.ID
+	if err := rsUC.CreatePermission(rwn.ID, &p); err != nil {
 		t.Errorf("Unexpected error: %s", err.Error())
 	}
 	ps, err := rsUC.GetPermissions(p.RoleID)
