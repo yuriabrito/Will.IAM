@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ghostec/Will.IAM/errors"
 	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/repositories"
 	extensionsHttp "github.com/topfreegames/extensions/http"
@@ -88,9 +89,7 @@ func (g *Google) ExchangeCode(code string) (*AuthResult, error) {
 	}
 	allowed := g.checkHostedDomain(userInfo.HostedDomain)
 	if !allowed {
-		return nil, fmt.Errorf(
-			"email from non-allowed hosted domain %s", userInfo.HostedDomain,
-		)
+		return nil, errors.NewNonAllowedEmailDomainError(userInfo.HostedDomain)
 	}
 	t.Email = userInfo.Email
 	if err := g.repo.Tokens.Save(t); err != nil {

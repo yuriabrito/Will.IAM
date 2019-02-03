@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ghostec/Will.IAM/errors"
 	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/oauth2"
 	"github.com/ghostec/Will.IAM/repositories"
@@ -163,7 +164,8 @@ func (sas *serviceAccounts) AuthenticateAccessToken(
 	if err != nil {
 		return nil, err
 	}
-	if authResult.Picture != "" {
+	sa, err := sas.repo.ServiceAccounts.ForEmail(authResult.Email)
+	if _, ok := err.(*errors.EntityNotFoundError); ok {
 		sa := &models.ServiceAccount{
 			Name:    authResult.Email,
 			Email:   authResult.Email,
@@ -172,16 +174,13 @@ func (sas *serviceAccounts) AuthenticateAccessToken(
 		if err = sas.Create(sa); err != nil {
 			return nil, err
 		}
-	}
-	sa, err := sas.repo.ServiceAccounts.ForEmail(authResult.Email)
-	// TODO: use better errors
-	saNotFoundErr := fmt.Sprintf(
-		"Service Account not found for email %s", authResult.Email,
-	)
-	if err != nil && err.Error() != saNotFoundErr {
+	} else if err != nil {
 		return nil, err
-	}
-	if err != nil && err.Error() == saNotFoundErr {
+	} else if authResult.Picture != "" && authResult.Picture != sa.Picture {
+		sa.Picture = authResult.Picture
+		if err = sas.repo.ServiceAccounts.Update(sa); err != nil {
+			return nil, err
+		}
 	}
 	auth = &models.AccessTokenAuth{
 		ServiceAccountID: sa.ID,

@@ -3,6 +3,7 @@ package repositories
 import (
 	"fmt"
 
+	"github.com/ghostec/Will.IAM/errors"
 	"github.com/ghostec/Will.IAM/models"
 )
 
@@ -14,6 +15,7 @@ type ServiceAccounts interface {
 	ForEmail(string) (*models.ServiceAccount, error)
 	ForKeyPair(string, string) (*models.ServiceAccount, error)
 	Create(*models.ServiceAccount) error
+	Update(*models.ServiceAccount) error
 	Clone() ServiceAccounts
 	setStorage(*Storage)
 }
@@ -30,12 +32,15 @@ func (sas serviceAccounts) Get(id string) (*models.ServiceAccount, error) {
 	sa := new(models.ServiceAccount)
 	if _, err := sas.storage.PG.DB.Query(
 		sa,
-		`SELECT id, name, key_id, key_secret, email, base_role_id
+		`SELECT id, name, key_id, key_secret, email, base_role_id, picture
 		FROM service_accounts
 		WHERE id = ?`,
 		id,
 	); err != nil {
 		return nil, err
+	}
+	if sa.ID == "" {
+		return nil, errors.NewEntityNotFoundError(models.ServiceAccount{}, id)
 	}
 	return sa, nil
 }
@@ -74,13 +79,13 @@ func (sas serviceAccounts) ForEmail(
 ) (*models.ServiceAccount, error) {
 	sa := new(models.ServiceAccount)
 	if _, err := sas.storage.PG.DB.Query(
-		sa, `SELECT id, name, key_id, key_secret, email, base_role_id
+		sa, `SELECT id, name, key_id, key_secret, email, base_role_id, picture
 		FROM service_accounts WHERE email = ? LIMIT 1`, email,
 	); err != nil {
 		return nil, err
 	}
 	if sa.ID == "" {
-		return nil, fmt.Errorf("Service Account not found for email %s", email)
+		return nil, errors.NewEntityNotFoundError(models.ServiceAccount{}, email)
 	}
 	return sa, nil
 }
@@ -98,7 +103,7 @@ func (sas serviceAccounts) ForKeyPair(
 		return nil, err
 	}
 	if len(sa) == 0 {
-		return nil, fmt.Errorf("service account not found")
+		return nil, errors.NewEntityNotFoundError(models.ServiceAccount{}, keyID)
 	}
 	return sa[0], nil
 }
@@ -107,8 +112,16 @@ func (sas serviceAccounts) Create(sa *models.ServiceAccount) error {
 	_, err := sas.storage.PG.DB.Query(
 		sa, `INSERT INTO service_accounts (id, name, email, key_id, key_secret,
 		base_role_id) VALUES (?id, ?name, ?email, ?key_id, ?key_secret,
-		?base_role_id) ON CONFLICT (email) DO UPDATE
-		SET picture = ?picture, updated_at = now() RETURNING id`, sa,
+		?base_role_id) RETURNING id`, sa,
+	)
+	return err
+}
+
+func (sas serviceAccounts) Update(sa *models.ServiceAccount) error {
+	_, err := sas.storage.PG.DB.Exec(
+		`UPDATE service_accounts SET name = ?name, email = ?email,
+		key_id = ?key_id, key_secret = ?key_secret, base_role_id = ?base_role_id,
+		picture = ?picture, updated_at = now() WHERE id = ?id`, sa,
 	)
 	return err
 }
