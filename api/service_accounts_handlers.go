@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/usecases"
 	"github.com/gorilla/mux"
 	"github.com/topfreegames/extensions/middleware"
@@ -22,7 +23,7 @@ func serviceAccountsGetHandler(
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		bts, err := keepJSONFieldsBytes(sa, "id", "name", "email")
+		bts, err := keepJSONFieldsBytes(sa, "id", "name", "email", "picture")
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -44,44 +45,27 @@ func serviceAccountsCreateHandler(
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		m := map[string]interface{}{}
-		err = json.Unmarshal(body, &m)
-		name, ok := m["name"].(string)
-		if !ok || name == "" {
-			Write(w, http.StatusUnprocessableEntity,
-				`{ "error": { "name": "required" } }`)
+		sawn := &usecases.ServiceAccountWithNested{}
+		err = json.Unmarshal(body, sawn)
+		v := sawn.Validate()
+		if !v.Valid() {
+			WriteBytes(w, http.StatusUnprocessableEntity, v.Errors())
 			return
 		}
-		authenticationType, ok := m["authenticationType"].(string)
-		if !ok || authenticationType == "" {
-			Write(w, http.StatusUnprocessableEntity,
-				`{ "error": { "authenticationType": "required" } }`)
-			return
-		}
-		if authenticationType == "oauth2" {
-			email, ok := m["email"].(string)
-			if !ok || email == "" {
-				Write(w, http.StatusUnprocessableEntity,
-					`{ "error": { "email": "required" } }`)
-				return
-			}
-			_, err = sasUC.WithContext(r.Context()).CreateOAuth2Type(name, email)
+		if sawn.AuthenticationType == models.AuthenticationTypes.OAuth2 {
+			_, err = sasUC.WithContext(r.Context()).CreateOAuth2Type(sawn.Name, sawn.Email)
 			if err != nil {
 				l.Error(err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-		} else if authenticationType == "keypair" {
-			_, err = sasUC.WithContext(r.Context()).CreateKeyPairType(name)
+		} else if sawn.AuthenticationType == models.AuthenticationTypes.KeyPair {
+			_, err = sasUC.WithContext(r.Context()).CreateKeyPairType(sawn.Name)
 			if err != nil {
 				l.Error(err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-		} else {
-			Write(w, http.StatusUnprocessableEntity,
-				`{ "error": { "authenticationType": "invalid" } }`)
-			return
 		}
 		w.WriteHeader(http.StatusCreated)
 	}

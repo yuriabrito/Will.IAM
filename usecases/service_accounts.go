@@ -54,6 +54,33 @@ func NewServiceAccounts(
 	}
 }
 
+// ServiceAccountWithNested is the required data to update a role
+type ServiceAccountWithNested struct {
+	ID                 string              `json:"-"`
+	Name               string              `json:"name"`
+	Email              string              `json:"email"`
+	PermissionsStrings []string            `json:"permissions"`
+	Permissions        []models.Permission `json:"-"`
+	RolesIDs           []string            `json:"rolesIds"`
+	AuthenticationType models.AuthenticationType
+}
+
+// Validate RoleWithNested fields
+func (sawn ServiceAccountWithNested) Validate() models.Validation {
+	v := &models.Validation{}
+	if sawn.Name == "" {
+		v.AddError("name", "required")
+	}
+	if !sawn.AuthenticationType.Valid() {
+		v.AddError("authenticatonType", "must be oauth2 or keypair")
+	}
+	if sawn.AuthenticationType == models.AuthenticationTypes.OAuth2 &&
+		sawn.Email == "" {
+		v.AddError("email", "required")
+	}
+	return *v
+}
+
 func (sas serviceAccounts) Create(sa *models.ServiceAccount) error {
 	return sas.repo.WithPGTx(sas.ctx, func(repo *repositories.All) error {
 		return createServiceAccount(sa, repo)

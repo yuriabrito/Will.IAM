@@ -14,6 +14,26 @@ type ServiceAccount struct {
 	CreatedUpdatedAt
 }
 
+// AuthenticationType type
+type AuthenticationType string
+
+// AuthenticationTypes are the supported authentication types
+var AuthenticationTypes = struct {
+	OAuth2  AuthenticationType
+	KeyPair AuthenticationType
+}{
+	OAuth2:  "oauth2",
+	KeyPair: "keypair",
+}
+
+// Valid checks if at is a possible value
+func (at AuthenticationType) Valid() bool {
+	if string(at) == "oauth2" || string(at) == "keypair" {
+		return true
+	}
+	return false
+}
+
 // BuildKeyPairServiceAccount generates random KeyID and KeySecret
 func BuildKeyPairServiceAccount(name string) *ServiceAccount {
 	return &ServiceAccount{
