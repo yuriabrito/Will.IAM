@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cespare/xxhash"
 	"github.com/ghostec/Will.IAM/errors"
 	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/repositories"
@@ -212,6 +213,19 @@ func (g *Google) maybeRefresh(t *models.Token) (*userInfo, error) {
 
 // Authenticate verifies if an accessToken is valid and maybe refresh it
 func (g *Google) Authenticate(accessToken string) (*models.AuthResult, error) {
+	var auth *models.AuthResult
+	var err error
+	err = g.repo.Tokens.WithLock(
+		fmt.Sprintf("lock-oauth2-google-%d", xxhash.Sum64String(accessToken)),
+		func() error {
+			auth, err = g.authenticate(accessToken)
+			return err
+		},
+	)
+	return auth, err
+}
+
+func (g *Google) authenticate(accessToken string) (*models.AuthResult, error) {
 	auth, err := g.repo.Tokens.FromCache(accessToken)
 	if err != nil {
 		return nil, err

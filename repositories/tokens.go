@@ -10,6 +10,7 @@ import (
 	"github.com/ghostec/Will.IAM/errors"
 	"github.com/ghostec/Will.IAM/models"
 	"github.com/go-redis/redis"
+	"gopkg.in/redsync.v1"
 )
 
 // Tokens contract
@@ -18,6 +19,7 @@ type Tokens interface {
 	ToCache(*models.AuthResult) error
 	Get(string) (*models.Token, error)
 	Save(*models.Token) error
+	WithLock(string, func() error) error
 	Clone() Tokens
 	setStorage(*Storage)
 }
@@ -91,6 +93,21 @@ func (ts tokens) Save(token *models.Token) error {
 	?expiry, ?email, now()) ON CONFLICT (refresh_token) DO UPDATE SET
 	access_token = ?access_token, expiry = ?expiry, updated_at = now()`, token)
 	return err
+}
+
+func (ts tokens) WithLock(lockName string, fn func() error) error {
+	rs := redsync.New([]redsync.Pool{ts.storage.RedisPool})
+	m := rs.NewMutex(
+		lockName,
+		redsync.SetExpiry(2*time.Second),
+		redsync.SetRetryDelay(100*time.Millisecond),
+		redsync.SetTries(10),
+	)
+	if err := m.Lock(); err != nil {
+		return err
+	}
+	defer m.Unlock()
+	return fn()
 }
 
 // NewTokens ctor

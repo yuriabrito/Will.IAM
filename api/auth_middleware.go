@@ -42,7 +42,7 @@ func authMiddleware(
 				saID, err := sasUC.WithContext(r.Context()).
 					AuthenticateKeyPair(keyPair[0], keyPair[1])
 				if err != nil {
-					l.Error(err)
+					l.WithError(err).Error("auth failed")
 					w.WriteHeader(http.StatusInternalServerError)
 					return
 				}
@@ -52,7 +52,6 @@ func authMiddleware(
 				accessTokenAuth, err := sasUC.WithContext(r.Context()).
 					AuthenticateAccessToken(accessToken)
 				if err != nil {
-					l := middleware.GetLogger(r.Context())
 					l.WithError(err).Info("auth failed")
 					if _, ok := err.(*errors.EntityNotFoundError); ok {
 						w.WriteHeader(http.StatusUnauthorized)
@@ -69,6 +68,9 @@ func authMiddleware(
 				ctx = context.WithValue(
 					r.Context(), serviceAccountIDCtxKey, accessTokenAuth.ServiceAccountID,
 				)
+			} else {
+				l.WithError(errors.NewInvalidAuthorizationTypeError()).Error("auth failed")
+				w.WriteHeader(http.StatusUnauthorized)
 			}
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
