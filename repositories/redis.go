@@ -1,8 +1,6 @@
 package repositories
 
 import (
-	"strings"
-
 	redigo "github.com/gomodule/redigo/redis"
 	"github.com/spf13/viper"
 	"github.com/topfreegames/extensions/redis"
@@ -30,7 +28,7 @@ func newRedisPool(url string) *redigo.Pool {
 		MaxIdle:   2,
 		MaxActive: 4,
 		Dial: func() (redigo.Conn, error) {
-			r, err := redigo.Dial("tcp", strings.Replace(url, "redis://", "", 1))
+			r, err := redigo.DialURL(url)
 			if err != nil {
 				println(err.Error())
 			}
