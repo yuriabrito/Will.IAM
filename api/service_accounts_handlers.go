@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/usecases"
 	"github.com/gorilla/mux"
 	"github.com/topfreegames/extensions/middleware"
@@ -52,20 +51,10 @@ func serviceAccountsCreateHandler(
 			WriteBytes(w, http.StatusUnprocessableEntity, v.Errors())
 			return
 		}
-		if sawn.AuthenticationType == models.AuthenticationTypes.OAuth2 {
-			_, err = sasUC.WithContext(r.Context()).CreateOAuth2Type(sawn.Name, sawn.Email)
-			if err != nil {
-				l.Error(err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-		} else if sawn.AuthenticationType == models.AuthenticationTypes.KeyPair {
-			_, err = sasUC.WithContext(r.Context()).CreateKeyPairType(sawn.Name)
-			if err != nil {
-				l.Error(err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
+		// TODO: check wheter creatorSA has ownership of sawn.PermissionsStrings
+		if err := sasUC.WithContext(r.Context()).CreateWithNested(sawn); err != nil {
+			l.WithError(err).Error("sasUC.CreateWithNested failed")
+			w.WriteHeader(http.StatusInternalServerError)
 		}
 		w.WriteHeader(http.StatusCreated)
 	}

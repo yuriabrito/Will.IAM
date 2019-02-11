@@ -78,7 +78,7 @@ func (g *Google) buildExchangeCodeForm(code string) string {
 }
 
 // ExchangeCode will trade code for full token with Google
-func (g *Google) ExchangeCode(code string) (*AuthResult, error) {
+func (g *Google) ExchangeCode(code string) (*models.AuthResult, error) {
 	t, err := g.tokenFromCode(code)
 	if err != nil {
 		return nil, err
@@ -95,7 +95,7 @@ func (g *Google) ExchangeCode(code string) (*AuthResult, error) {
 	if err := g.repo.Tokens.Save(t); err != nil {
 		return nil, err
 	}
-	return &AuthResult{
+	return &models.AuthResult{
 		AccessToken: t.AccessToken,
 		Email:       t.Email,
 		Picture:     userInfo.Picture,
@@ -211,9 +211,22 @@ func (g *Google) maybeRefresh(t *models.Token) (*userInfo, error) {
 }
 
 // Authenticate verifies if an accessToken is valid and maybe refresh it
-func (g *Google) Authenticate(accessToken string) (*AuthResult, error) {
+func (g *Google) Authenticate(accessToken string) (*models.AuthResult, error) {
+	auth, err := g.repo.Tokens.FromCache(accessToken)
+	if err != nil {
+		return nil, err
+	}
+	if auth != nil {
+		return auth, nil
+	}
 	t, err := g.repo.Tokens.Get(accessToken)
 	if err != nil {
+		return nil, err
+	}
+	if err := g.repo.Tokens.ToCache(&models.AuthResult{
+		AccessToken: t.AccessToken,
+		Email:       t.Email,
+	}); err != nil {
 		return nil, err
 	}
 	var userInfo *userInfo
@@ -223,7 +236,7 @@ func (g *Google) Authenticate(accessToken string) (*AuthResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	authResult := &AuthResult{
+	authResult := &models.AuthResult{
 		AccessToken: t.AccessToken,
 		Email:       t.Email,
 	}

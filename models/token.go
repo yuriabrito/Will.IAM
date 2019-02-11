@@ -21,3 +21,10 @@ type AccessTokenAuth struct {
 	AccessToken      string
 	Email            string
 }
+
+// AuthResult is the result of a successful authentication
+type AuthResult struct {
+	AccessToken string `json:"accessToken"`
+	Email       string `json:"email"`
+	Picture     string `json:"picture"`
+}

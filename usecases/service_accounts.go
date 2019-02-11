@@ -16,6 +16,7 @@ type ServiceAccounts interface {
 	Create(*models.ServiceAccount) error
 	CreateKeyPairType(string) (*models.ServiceAccount, error)
 	CreateOAuth2Type(string, string) (*models.ServiceAccount, error)
+	CreateWithNested(*ServiceAccountWithNested) error
 	AuthenticateAccessToken(string) (*models.AccessTokenAuth, error)
 	AuthenticateKeyPair(string, string) (string, error)
 	HasPermissionString(string, string) (bool, error)
@@ -79,6 +80,29 @@ func (sawn ServiceAccountWithNested) Validate() models.Validation {
 		v.AddError("email", "required")
 	}
 	return *v
+}
+
+func (sas serviceAccounts) CreateWithNested(
+	sawn *ServiceAccountWithNested,
+) error {
+	return sas.repo.WithPGTx(sas.ctx, func(repo *repositories.All) error {
+		var sa *models.ServiceAccount
+		if sawn.AuthenticationType == models.AuthenticationTypes.OAuth2 {
+			sa = models.BuildOAuth2ServiceAccount(sawn.Name, sawn.Email)
+			if err := createServiceAccount(sa, repo); err != nil {
+				return err
+			}
+		} else if sawn.AuthenticationType == models.AuthenticationTypes.KeyPair {
+			sa = models.BuildKeyPairServiceAccount(sawn.Name)
+			if err := createServiceAccount(sa, repo); err != nil {
+				return err
+			}
+		}
+		if len(sawn.Permissions) > 0 {
+			// TODO: add permissions to base role
+		}
+		return nil
+	})
 }
 
 func (sas serviceAccounts) Create(sa *models.ServiceAccount) error {
@@ -180,13 +204,6 @@ func (sas serviceAccounts) Search(
 func (sas *serviceAccounts) AuthenticateAccessToken(
 	accessToken string,
 ) (*models.AccessTokenAuth, error) {
-	auth, err := sas.repo.Tokens.FromCache(accessToken)
-	if err != nil {
-		return nil, err
-	}
-	if auth != nil {
-		return auth, nil
-	}
 	authResult, err := sas.oauth2Provider.Authenticate(accessToken)
 	if err != nil {
 		return nil, err
@@ -209,20 +226,11 @@ func (sas *serviceAccounts) AuthenticateAccessToken(
 			return nil, err
 		}
 	}
-	auth = &models.AccessTokenAuth{
+	return &models.AccessTokenAuth{
 		ServiceAccountID: sa.ID,
 		AccessToken:      authResult.AccessToken,
 		Email:            authResult.Email,
-	}
-	authWithFirstAccessToken := &models.AccessTokenAuth{
-		ServiceAccountID: sa.ID,
-		AccessToken:      accessToken,
-		Email:            authResult.Email,
-	}
-	if err := sas.repo.Tokens.ToCache(authWithFirstAccessToken); err != nil {
-		return nil, err
-	}
-	return auth, nil
+	}, nil
 }
 
 // AuthenticateKeyPair verifies if key pair is valid

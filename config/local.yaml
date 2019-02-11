@@ -1,3 +1,4 @@
+verbose: 3
 jaeger:
   disabled: false
   samplingProbability: 1

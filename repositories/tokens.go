@@ -14,8 +14,8 @@ import (
 
 // Tokens contract
 type Tokens interface {
-	FromCache(string) (*models.AccessTokenAuth, error)
-	ToCache(*models.AccessTokenAuth) error
+	FromCache(string) (*models.AuthResult, error)
+	ToCache(*models.AuthResult) error
 	Get(string) (*models.Token, error)
 	Save(*models.Token) error
 	Clone() Tokens
@@ -34,7 +34,7 @@ func buildTokenCacheKey(accessToken string) string {
 	return fmt.Sprintf("accessToken-%d", xxhash.Sum64String(accessToken))
 }
 
-func (ts tokens) ToCache(auth *models.AccessTokenAuth) error {
+func (ts tokens) ToCache(auth *models.AuthResult) error {
 	if !constants.TokensCacheEnabled {
 		return nil
 	}
@@ -50,7 +50,7 @@ func (ts tokens) ToCache(auth *models.AccessTokenAuth) error {
 
 func (ts tokens) FromCache(
 	accessToken string,
-) (*models.AccessTokenAuth, error) {
+) (*models.AuthResult, error) {
 	if !constants.TokensCacheEnabled {
 		return nil, nil
 	}
@@ -62,7 +62,7 @@ func (ts tokens) FromCache(
 	if err != nil {
 		return nil, err
 	}
-	auth := &models.AccessTokenAuth{}
+	auth := &models.AuthResult{}
 	if err := json.Unmarshal(bts, &auth); err != nil {
 		return nil, err
 	}

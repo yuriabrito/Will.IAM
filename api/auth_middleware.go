@@ -52,6 +52,8 @@ func authMiddleware(
 				accessTokenAuth, err := sasUC.WithContext(r.Context()).
 					AuthenticateAccessToken(accessToken)
 				if err != nil {
+					l := middleware.GetLogger(r.Context())
+					l.WithError(err).Info("auth failed")
 					if _, ok := err.(*errors.EntityNotFoundError); ok {
 						w.WriteHeader(http.StatusUnauthorized)
 						return

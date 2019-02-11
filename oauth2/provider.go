@@ -1,19 +1,16 @@
 package oauth2
 
-import "context"
+import (
+	"context"
 
-// AuthResult is the result of a successful authentication
-type AuthResult struct {
-	AccessToken string `json:"accessToken"`
-	Email       string `json:"email"`
-	Picture     string `json:"picture"`
-}
+	"github.com/ghostec/Will.IAM/models"
+)
 
 // Provider is the contract any OAuth2 implementation must follow
 type Provider interface {
 	BuildAuthURL(string) string
-	ExchangeCode(string) (*AuthResult, error)
-	Authenticate(string) (*AuthResult, error)
+	ExchangeCode(string) (*models.AuthResult, error)
+	Authenticate(string) (*models.AuthResult, error)
 	WithContext(context.Context) Provider
 }
 
@@ -33,20 +30,20 @@ func (p *ProviderBlankMock) BuildAuthURL(any string) string {
 }
 
 // ExchangeCode dummy
-func (p *ProviderBlankMock) ExchangeCode(any string) (*AuthResult, error) {
-	return &AuthResult{
+func (p *ProviderBlankMock) ExchangeCode(any string) (*models.AuthResult, error) {
+	return &models.AuthResult{
 		AccessToken: "any",
 		Email:       "any",
 	}, nil
 }
 
 // Authenticate dummy
-func (p *ProviderBlankMock) Authenticate(any string) (*AuthResult, error) {
+func (p *ProviderBlankMock) Authenticate(any string) (*models.AuthResult, error) {
 	email := "any@email.com"
 	if p.Email != "" {
 		email = p.Email
 	}
-	return &AuthResult{
+	return &models.AuthResult{
 		AccessToken: any,
 		Email:       email,
 	}, nil
