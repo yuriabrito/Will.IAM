@@ -17,6 +17,7 @@ import (
 type Tokens interface {
 	FromCache(string) (*models.AuthResult, error)
 	ToCache(*models.AuthResult) error
+	DeleteFromCache(string) error
 	Get(string) (*models.Token, error)
 	Save(*models.Token) error
 	WithLock(string, func() error) error
@@ -71,6 +72,18 @@ func (ts tokens) FromCache(
 	return auth, nil
 }
 
+func (ts tokens) DeleteFromCache(accessToken string) error {
+	if !constants.TokensCacheEnabled {
+		return nil
+	}
+	res := ts.storage.Redis.Client.Del(buildTokenCacheKey(accessToken))
+	err := res.Err()
+	if err != nil && err == redis.Nil {
+		return nil
+	}
+	return err
+}
+
 func (ts tokens) Get(accessToken string) (*models.Token, error) {
 	t := new(models.Token)
 	if _, err := ts.storage.PG.DB.Query(
@@ -99,9 +112,9 @@ func (ts tokens) WithLock(lockName string, fn func() error) error {
 	rs := redsync.New([]redsync.Pool{ts.storage.RedisPool})
 	m := rs.NewMutex(
 		lockName,
-		redsync.SetExpiry(2*time.Second),
-		redsync.SetRetryDelay(100*time.Millisecond),
-		redsync.SetTries(10),
+		redsync.SetExpiry(1*time.Second),
+		redsync.SetRetryDelay(5*time.Millisecond),
+		redsync.SetTries(100),
 	)
 	if err := m.Lock(); err != nil {
 		return err

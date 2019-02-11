@@ -237,17 +237,17 @@ func (g *Google) authenticate(accessToken string) (*models.AuthResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := g.repo.Tokens.ToCache(&models.AuthResult{
-		AccessToken: t.AccessToken,
-		Email:       t.Email,
-	}); err != nil {
-		return nil, err
-	}
 	var userInfo *userInfo
 	if userInfo, err = g.maybeRefresh(t); err != nil {
 		return nil, err
 	}
 	if err != nil {
+		return nil, err
+	}
+	if err := g.repo.Tokens.ToCache(&models.AuthResult{
+		AccessToken: accessToken,
+		Email:       t.Email,
+	}); err != nil {
 		return nil, err
 	}
 	authResult := &models.AuthResult{
