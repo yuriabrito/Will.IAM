@@ -56,7 +56,7 @@ func (a *All) WithPGTx(ctx context.Context, fn func(repo *All) error) error {
 	if err == nil {
 		return pg.Commit(c.storage.PG.DB)
 	}
-	return nil
+	return err
 }
 
 func (a *All) cloneWithStorage(s *Storage) *All {

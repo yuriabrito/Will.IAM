@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/ghostec/Will.IAM/errors"
 	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/oauth2"
 	"github.com/ghostec/Will.IAM/usecases"
@@ -51,14 +52,20 @@ func authenticationExchangeCodeHandler(
 			return
 		}
 		sa := &models.ServiceAccount{
-			Name:    authResult.Email,
-			Email:   authResult.Email,
-			Picture: authResult.Picture,
+			Name:               authResult.Email,
+			Email:              authResult.Email,
+			Picture:            authResult.Picture,
+			AuthenticationType: models.AuthenticationTypes.OAuth2,
 		}
-		if err = sasUC.WithContext(r.Context()).Create(sa); err != nil {
-			l.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+		if _, err = sasUC.WithContext(r.Context()).ForEmail(authResult.Email); err != nil {
+			if _, ok := err.(*errors.EntityNotFoundError); ok {
+				if err = sasUC.WithContext(r.Context()).Create(sa); err != nil {
+					l.WithError(err).
+						Error("authenticationExchangeCodeHandler sasUC.Create failed")
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+			}
 		}
 		v := url.Values{}
 		v.Add("accessToken", authResult.AccessToken)

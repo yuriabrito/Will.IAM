@@ -1,7 +1,6 @@
 package repositories
 
 import (
-	redigo "github.com/gomodule/redigo/redis"
 	"github.com/spf13/viper"
 	"github.com/topfreegames/extensions/redis"
 )
@@ -19,20 +18,5 @@ func (s *Storage) ConfigureRedis(config *viper.Viper) error {
 		return err
 	}
 	s.Redis = client
-	s.RedisPool = newRedisPool(config.GetString("extensions.redis.url"))
 	return nil
-}
-
-func newRedisPool(url string) *redigo.Pool {
-	return &redigo.Pool{
-		MaxIdle:   2,
-		MaxActive: 4,
-		Dial: func() (redigo.Conn, error) {
-			r, err := redigo.DialURL(url)
-			if err != nil {
-				println(err.Error())
-			}
-			return r, err
-		},
-	}
 }

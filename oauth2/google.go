@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cespare/xxhash"
 	"github.com/ghostec/Will.IAM/errors"
 	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/repositories"
@@ -93,6 +92,8 @@ func (g *Google) ExchangeCode(code string) (*models.AuthResult, error) {
 		return nil, errors.NewNonAllowedEmailDomainError(userInfo.HostedDomain)
 	}
 	t.Email = userInfo.Email
+	// TODO: don't return sso_access_token to user, return 2 tokens to sso
+	t.Expiry = time.Now().UTC().Add(14 * 24 * 3600 * time.Second)
 	if err := g.repo.Tokens.Save(t); err != nil {
 		return nil, err
 	}
@@ -189,7 +190,7 @@ func (g *Google) buildRefreshTokenForm(refreshToken string) string {
 }
 
 func (g *Google) maybeRefresh(t *models.Token) (*userInfo, error) {
-	if t.Expiry.After(time.Now().UTC()) {
+	if t.Expiry.After(time.Now().UTC()) || !t.ExpiredAt.IsZero() {
 		return nil, nil
 	}
 	rtf := g.buildRefreshTokenForm(t.RefreshToken)
@@ -197,6 +198,9 @@ func (g *Google) maybeRefresh(t *models.Token) (*userInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	oldT := t.Clone()
+	oldT.ExpiredAt.Time = time.Now().UTC()
+	t.ID = ""
 	t.AccessToken = tmap["access_token"].(string)
 	t.Expiry = time.Now().UTC().Add(
 		time.Second * time.Duration(tmap["expires_in"].(float64)),
@@ -205,7 +209,17 @@ func (g *Google) maybeRefresh(t *models.Token) (*userInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = g.repo.Tokens.Save(t); err != nil {
+	if err := g.repo.WithPGTx(
+		context.Background(), func(repo *repositories.All,
+		) error {
+			if err := g.repo.Tokens.Save(t); err != nil {
+				return err
+			}
+			if err := g.repo.Tokens.Save(oldT); err != nil {
+				return err
+			}
+			return nil
+		}); err != nil {
 		return nil, err
 	}
 	return userInfo, nil
@@ -213,26 +227,6 @@ func (g *Google) maybeRefresh(t *models.Token) (*userInfo, error) {
 
 // Authenticate verifies if an accessToken is valid and maybe refresh it
 func (g *Google) Authenticate(accessToken string) (*models.AuthResult, error) {
-	var auth *models.AuthResult
-	var err error
-	err = g.repo.Tokens.WithLock(
-		fmt.Sprintf("lock-oauth2-google-%d", xxhash.Sum64String(accessToken)),
-		func() error {
-			auth, err = g.authenticate(accessToken)
-			return err
-		},
-	)
-	return auth, err
-}
-
-func (g *Google) authenticate(accessToken string) (*models.AuthResult, error) {
-	auth, err := g.repo.Tokens.FromCache(accessToken)
-	if err != nil {
-		return nil, err
-	}
-	if auth != nil {
-		return auth, nil
-	}
 	t, err := g.repo.Tokens.Get(accessToken)
 	if err != nil {
 		return nil, err
@@ -242,12 +236,6 @@ func (g *Google) authenticate(accessToken string) (*models.AuthResult, error) {
 		return nil, err
 	}
 	if err != nil {
-		return nil, err
-	}
-	if err := g.repo.Tokens.ToCache(&models.AuthResult{
-		AccessToken: accessToken,
-		Email:       t.Email,
-	}); err != nil {
 		return nil, err
 	}
 	authResult := &models.AuthResult{

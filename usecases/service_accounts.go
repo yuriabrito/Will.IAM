@@ -26,6 +26,7 @@ type ServiceAccounts interface {
 	GetPermissions(string) ([]models.Permission, error)
 	CreatePermission(string, *models.Permission) error
 	Get(string) (*models.ServiceAccount, error)
+	ForEmail(string) (*models.ServiceAccount, error)
 	List() ([]models.ServiceAccount, error)
 	Search(string) ([]models.ServiceAccount, error)
 	GetRoles(string) ([]models.Role, error)
@@ -178,6 +179,13 @@ func (sas serviceAccounts) Get(
 		return nil, err
 	}
 	return sa, nil
+}
+
+// ForEmail returns a service account by email
+func (sas serviceAccounts) ForEmail(
+	email string,
+) (*models.ServiceAccount, error) {
+	return sas.repo.ServiceAccounts.ForEmail(email)
 }
 
 // List returns a list of all service accounts
