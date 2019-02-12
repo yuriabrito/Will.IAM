@@ -104,9 +104,35 @@ func (g *Google) ExchangeCode(code string) (*models.AuthResult, error) {
 	}, nil
 }
 
+// GoogleToken is the expected response for token endpoints
+type GoogleToken struct {
+	AccessToken  string  `json:"access_token"`
+	RefreshToken string  `json:"refresh_token"`
+	TokenType    string  `json:"token_type"`
+	ExpiresIn    float64 `json:"expires_in"`
+}
+
+// Validate GoogleToken
+func (gt GoogleToken) Validate() *models.Validation {
+	validation := &models.Validation{}
+	if gt.AccessToken == "" {
+		validation.AddError("access_token", "required")
+	}
+	if gt.RefreshToken == "" {
+		validation.AddError("refresh_token", "required")
+	}
+	if gt.TokenType == "" {
+		validation.AddError("token_type", "required")
+	}
+	if gt.ExpiresIn <= 0 {
+		validation.AddError("expires_in", "should be greater than 0")
+	}
+	return validation
+}
+
 func (g *Google) postToTokenEndpoint(
 	urlencoded string,
-) (map[string]interface{}, error) {
+) (*GoogleToken, error) {
 	req, err := http.NewRequest("POST", tokenEndpoint, strings.NewReader(urlencoded))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	if err != nil {
@@ -118,26 +144,30 @@ func (g *Google) postToTokenEndpoint(
 	}
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
-	tmap := map[string]interface{}{}
-	err = json.Unmarshal(body, &tmap)
+	gt := &GoogleToken{}
+	err = json.Unmarshal(body, gt)
 	if err != nil {
 		return nil, err
 	}
-	return tmap, nil
+	v := gt.Validate()
+	if !v.Valid() {
+		return nil, v.Error()
+	}
+	return gt, nil
 }
 
 func (g *Google) tokenFromCode(code string) (*models.Token, error) {
 	ecf := g.buildExchangeCodeForm(code)
-	tmap, err := g.postToTokenEndpoint(ecf)
+	gt, err := g.postToTokenEndpoint(ecf)
 	if err != nil {
 		return nil, err
 	}
 	return &models.Token{
-		AccessToken:  tmap["access_token"].(string),
-		RefreshToken: tmap["refresh_token"].(string),
-		TokenType:    tmap["token_type"].(string),
+		AccessToken:  gt.AccessToken,
+		RefreshToken: gt.RefreshToken,
+		TokenType:    gt.TokenType,
 		Expiry: time.Now().UTC().Add(
-			time.Second * time.Duration(tmap["expires_in"].(float64)),
+			time.Second * time.Duration(gt.ExpiresIn),
 		),
 	}, nil
 }
@@ -194,16 +224,16 @@ func (g *Google) maybeRefresh(t *models.Token) (*userInfo, error) {
 		return nil, nil
 	}
 	rtf := g.buildRefreshTokenForm(t.RefreshToken)
-	tmap, err := g.postToTokenEndpoint(rtf)
+	gt, err := g.postToTokenEndpoint(rtf)
 	if err != nil {
 		return nil, err
 	}
 	oldT := t.Clone()
 	oldT.ExpiredAt.Time = time.Now().UTC()
 	t.ID = ""
-	t.AccessToken = tmap["access_token"].(string)
+	t.AccessToken = gt.AccessToken
 	t.Expiry = time.Now().UTC().Add(
-		time.Second * time.Duration(tmap["expires_in"].(float64)),
+		time.Second * time.Duration(gt.ExpiresIn),
 	)
 	userInfo, err := g.getUserInfo(t.AccessToken)
 	if err != nil {

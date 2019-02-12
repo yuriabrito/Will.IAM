@@ -1,6 +1,10 @@
 package models
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+)
 
 // Validation holds errors and whether a model is valid or not
 type Validation struct {
@@ -26,4 +30,15 @@ func (v *Validation) AddError(key, value string) {
 		v.jsonErrors = map[string]string{}
 	}
 	v.jsonErrors[key] = value
+}
+
+func (v Validation) Error() error {
+	if v.jsonErrors == nil {
+		return nil
+	}
+	strs := []string{}
+	for k, v := range v.jsonErrors {
+		strs = append(strs, fmt.Sprintf("%s: %s", k, v))
+	}
+	return fmt.Errorf(strings.Join(strs, "\t"))
 }

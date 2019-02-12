@@ -46,8 +46,13 @@ func authenticationExchangeCodeHandler(
 		}
 		code := qs["code"][0]
 		authResult, err := provider.WithContext(r.Context()).ExchangeCode(code)
+		if _, ok := err.(*errors.NonAllowedEmailDomainError); ok {
+			l.WithError(err).Error("oauth2.ExchangeCode failed")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		if err != nil {
-			l.Error(err)
+			l.WithError(err).Error("oauth2.ExchangeCode failed")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
