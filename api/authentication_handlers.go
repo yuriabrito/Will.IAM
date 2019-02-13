@@ -103,24 +103,24 @@ func authenticationValidHandler(
 		}
 		authResult, err := sasUC.WithContext(r.Context()).
 			AuthenticateAccessToken(qs["accessToken"][0])
+		referer := qs["referer"][0]
 		if err != nil {
-			l.Error(err)
+			l.WithError(err).Error("authenticationValidHandler AuthenticateAccessToken failed")
 			v := url.Values{}
-			v.Add("referer", qs["referer"][0])
+			v.Add("referer", referer)
 			http.Redirect(
 				w, r, fmt.Sprintf("/sso/auth/do?%s", v.Encode()), http.StatusSeeOther,
 			)
 			return
 		}
 		v := url.Values{}
-		v.Add("referer", qs["referer"][0])
 		v.Add("accessToken", authResult.AccessToken)
 		sep := "?"
-		if strings.Contains(qs["referer"][0], "?") {
+		if strings.Contains(referer, "?") {
 			sep = "&"
 		}
 		http.Redirect(
-			w, r, fmt.Sprintf("%s%s%s", qs["referer"][0], sep, v.Encode()),
+			w, r, fmt.Sprintf("%s%s%s", referer, sep, v.Encode()),
 			http.StatusSeeOther,
 		)
 	}

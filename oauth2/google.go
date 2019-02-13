@@ -118,9 +118,6 @@ func (gt GoogleToken) Validate() *models.Validation {
 	if gt.AccessToken == "" {
 		validation.AddError("access_token", "required")
 	}
-	if gt.RefreshToken == "" {
-		validation.AddError("refresh_token", "required")
-	}
 	if gt.TokenType == "" {
 		validation.AddError("token_type", "required")
 	}
