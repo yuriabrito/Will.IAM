@@ -34,14 +34,6 @@
   version = "v6.0.0"
 
 [[projects]]
-  digest = "1:f6485831252319cd6ca29fc170adecf1eb81bf1e805f62f44eb48564ce2485fe"
-  name = "github.com/cespare/xxhash"
-  packages = ["."]
-  pruneopts = ""
-  revision = "3b82fb7d186719faeedd0c2864f868c74fbf79a1"
-  version = "v2.0.0"
-
-[[projects]]
   branch = "master"
   digest = "1:c46fd324e7902268373e1b337436a6377c196e2dbd7b35624c6256d29d494e78"
   name = "github.com/codahale/hdrhistogram"
@@ -104,17 +96,6 @@
   pruneopts = ""
   revision = "aa810b61a9c79d51363740d207bb46cf8e620ed5"
   version = "v1.2.0"
-
-[[projects]]
-  digest = "1:dcf8316121302735c0ac84e05f4686e3b34e284444435e9a206da48d8be18cb1"
-  name = "github.com/gomodule/redigo"
-  packages = [
-    "internal",
-    "redis",
-  ]
-  pruneopts = ""
-  revision = "9c11da706d9b7902c6da69c592f75637793fe121"
-  version = "v2.0.0"
 
 [[projects]]
   digest = "1:a3c01bbe8766cbce019cdb900aa51460a6f7bd4266a18d80722dc92297302bc3"
@@ -425,14 +406,6 @@
   version = "v1.4.0"
 
 [[projects]]
-  digest = "1:7108df85fa62b7eb12cdd24286732fc36ad482326e7242f221f9cfbdc5bffddf"
-  name = "gopkg.in/redsync.v1"
-  packages = ["."]
-  pruneopts = ""
-  revision = "89538344de92e78df4b7eeeceec1f3cf2d7c0aeb"
-  version = "v1.1.1"
-
-[[projects]]
   digest = "1:cedccf16b71e86db87a24f8d4c70b0a855872eb967cb906a66b95de56aefbd0d"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
@@ -452,10 +425,8 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/cespare/xxhash",
-    "github.com/go-redis/redis",
+    "github.com/go-pg/pg",
     "github.com/gofrs/uuid",
-    "github.com/gomodule/redigo/redis",
     "github.com/gorilla/mux",
     "github.com/rs/cors",
     "github.com/sirupsen/logrus",
@@ -467,7 +438,6 @@
     "github.com/topfreegames/extensions/pg",
     "github.com/topfreegames/extensions/redis",
     "github.com/topfreegames/extensions/router",
-    "gopkg.in/redsync.v1",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

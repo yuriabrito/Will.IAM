@@ -340,7 +340,7 @@ func (a *App) GetRouter() *mux.Router {
 	).
 		Methods("PUT").Name("permissionsCreatePermissionRequestHandler")
 
-	amUseCase := usecases.NewAM(rsUC)
+	amUseCase := usecases.NewAM(repo, rsUC)
 
 	r.HandleFunc(
 		"/am",
