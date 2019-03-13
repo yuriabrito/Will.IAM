@@ -325,12 +325,12 @@ func (a *App) GetRouter() *mux.Router {
 		Methods("GET").Name("permissionsHasHandler")
 
 	r.Handle(
-		"/permissions/has",
+		"/permissions/hasMany",
 		authMiddle(http.HandlerFunc(
-			permissionsCheckHandler(sasUC),
+			permissionsHasManyHandler(sasUC),
 		)),
 	).
-		Methods("POST").Name("permissionsCheckHandler")
+		Methods("POST").Name("permissionsHasManyHandler")
 
 	r.Handle(
 		"/permissions/requests",
