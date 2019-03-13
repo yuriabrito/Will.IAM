@@ -142,3 +142,46 @@ func permissionsHasHandler(
 		w.WriteHeader(http.StatusOK)
 	}
 }
+
+func permissionsCheckHandler(
+	sasUC usecases.ServiceAccounts,
+) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		l := middleware.GetLogger(r.Context())
+		body, err := ioutil.ReadAll(r.Body)
+		defer r.Body.Close()
+		if err != nil {
+			l.WithError(err).Error("permissionsCheckHandler ioutil.ReadAll failed")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		permissions := make([]string, 0)
+		err = json.Unmarshal(body, &permissions)
+		if err != nil {
+			l.WithError(err).Error("permissionsCheckHandler json.Unmarshal failed")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		resultStatus := make([]bool, 0)
+		saID, _ := getServiceAccountID(r.Context())
+		for _, permission := range permissions {
+			has, err := sasUC.WithContext(r.Context()).HasPermissionString(saID, permission)
+			if err != nil {
+				l.Error(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			resultStatus = append(resultStatus, has)
+		}
+
+		bts, err := json.Marshal(resultStatus)
+		if err != nil {
+			l.WithError(err).Error("permissionsCheckHandler json.Marshal error")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		WriteBytes(w, http.StatusOK, bts)
+	}
+}
