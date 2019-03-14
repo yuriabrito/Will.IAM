@@ -6,6 +6,7 @@ import "github.com/ghostec/Will.IAM/models"
 type Services interface {
 	List() ([]models.Service, error)
 	Get(string) (*models.Service, error)
+	WithPermissionName(string) (*models.Service, error)
 	Create(*models.Service) error
 	Update(*models.Service) error
 	Clone() Services
@@ -46,6 +47,19 @@ func (ss services) Get(id string) (*models.Service, error) {
 	s := new(models.Service)
 	if _, err := ss.storage.PG.DB.Query(
 		s, `SELECT * FROM services WHERE id = ?`, id,
+	); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+// WithPermissionName looks for a service given a PermissionName
+func (ss services) WithPermissionName(
+	permissionName string,
+) (*models.Service, error) {
+	s := new(models.Service)
+	if _, err := ss.storage.PG.DB.Query(
+		s, `SELECT * FROM services WHERE permission_name = ?`, permissionName,
 	); err != nil {
 		return nil, err
 	}

@@ -15,6 +15,13 @@ setup-gin:
 setup-project:
 	@go get -u github.com/golang/dep/cmd/dep
 	@dep ensure
+	@make deps
+	@make migrate
+
+# run this if you don't have migrate
+setup-migrate:
+	@curl -L https://github.com/golang-migrate/migrate/releases/download/v4.2.2/migrate.$(platform)-amd64.tar.gz | tar xvz
+	@mv migrate.$(platform)-amd64 /usr/local/bin/migrate
 
 deps:
 	@mkdir -p docker_data && docker-compose up -d postgres redis
@@ -44,10 +51,6 @@ build-docker:
 
 run:
 	@gin -i --port 3001 --appPort 4040 --bin Will.IAM run start-api
-
-setup-migrate:
-	@curl -L https://github.com/golang-migrate/migrate/releases/download/v4.2.2/migrate.$(platform)-amd64.tar.gz | tar xvz
-	@mv migrate.$(platform)-amd64 /usr/local/bin/migrate
 
 migrate:
 	@migrate -path migrations -database ${database} up
