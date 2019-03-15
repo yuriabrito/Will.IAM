@@ -83,6 +83,9 @@ func (rh ResourceHierarchy) Contains(orh ResourceHierarchy) bool {
 		return false
 	}
 	for i := range orhh.hierarchy {
+		if i >= len(rhh.hierarchy) {
+			return false
+		}
 		if rhh.hierarchy[i] == "*" {
 			return true
 		}
