@@ -58,33 +58,35 @@ func rolesCreatePermissionHandler(
 	}
 }
 
-func processRoleWithNestedFromReq(
-	r *http.Request, sasUC usecases.ServiceAccounts,
-) (*usecases.RoleWithNested, error) {
-	body, err := ioutil.ReadAll(r.Body)
-	defer r.Body.Close()
-	if err != nil {
-		return nil, err
+func rolesCreateHandler(
+	sasUC usecases.ServiceAccounts, rsUC usecases.Roles,
+) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		l := middleware.GetLogger(r.Context())
+		rwn, err := processRoleWithNestedFromReq(r, sasUC)
+		if err != nil {
+			statusCode := http.StatusInternalServerError
+			if _, ok := err.(errors.ErrorWithStatusCode); ok {
+				statusCode = err.(errors.ErrorWithStatusCode).
+					StatusCode()
+			}
+			l.WithError(err).Error("rolesUpdateHandler processRoleWithNestedFromReq")
+			w.WriteHeader(statusCode)
+			return
+		}
+		v := rwn.Validate()
+		if !v.Valid() {
+			WriteBytes(w, http.StatusUnprocessableEntity, v.Errors())
+			return
+		}
+		err = rsUC.WithContext(r.Context()).Create(rwn)
+		if err != nil {
+			l.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
 	}
-	rwn := &usecases.RoleWithNested{}
-	err = json.Unmarshal(body, rwn)
-	if err != nil {
-		return nil, err
-	}
-	saID, _ := getServiceAccountID(r.Context())
-	rwn.Permissions, err = models.BuildPermissions(rwn.PermissionsStrings)
-	if err != nil {
-		return nil, err
-	}
-	has, err := sasUC.WithContext(r.Context()).
-		HasAllOwnerPermissions(saID, rwn.Permissions)
-	if err != nil {
-		return nil, err
-	}
-	if !has {
-		return nil, errors.NewUserDoesntHaveAllPermissionsError()
-	}
-	return rwn, nil
 }
 
 func rolesUpdateHandler(
@@ -119,6 +121,35 @@ func rolesUpdateHandler(
 	}
 }
 
+func processRoleWithNestedFromReq(
+	r *http.Request, sasUC usecases.ServiceAccounts,
+) (*usecases.RoleWithNested, error) {
+	body, err := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+	rwn := &usecases.RoleWithNested{}
+	err = json.Unmarshal(body, rwn)
+	if err != nil {
+		return nil, err
+	}
+	saID, _ := getServiceAccountID(r.Context())
+	rwn.Permissions, err = models.BuildPermissions(rwn.PermissionsStrings)
+	if err != nil {
+		return nil, err
+	}
+	has, err := sasUC.WithContext(r.Context()).
+		HasAllOwnerPermissions(saID, rwn.Permissions)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, errors.NewUserDoesntHaveAllPermissionsError()
+	}
+	return rwn, nil
+}
+
 func rolesListHandler(
 	rsUC usecases.Roles,
 ) func(http.ResponseWriter, *http.Request) {
@@ -140,37 +171,6 @@ func rolesListHandler(
 	}
 }
 
-func rolesCreateHandler(
-	sasUC usecases.ServiceAccounts, rsUC usecases.Roles,
-) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		l := middleware.GetLogger(r.Context())
-		rwn, err := processRoleWithNestedFromReq(r, sasUC)
-		if err != nil {
-			statusCode := http.StatusInternalServerError
-			if _, ok := err.(errors.ErrorWithStatusCode); ok {
-				statusCode = err.(errors.ErrorWithStatusCode).
-					StatusCode()
-			}
-			l.WithError(err).Error("rolesUpdateHandler processRoleWithNestedFromReq")
-			w.WriteHeader(statusCode)
-			return
-		}
-		v := rwn.Validate()
-		if !v.Valid() {
-			WriteBytes(w, http.StatusUnprocessableEntity, v.Errors())
-			return
-		}
-		err = rsUC.WithContext(r.Context()).Create(rwn)
-		if err != nil {
-			l.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		w.WriteHeader(http.StatusCreated)
-	}
-}
-
 func rolesGetHandler(
 	rsUC usecases.Roles,
 ) func(http.ResponseWriter, *http.Request) {
@@ -184,35 +184,7 @@ func rolesGetHandler(
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		pSl, err := rsUCc.GetPermissions(id)
-		if err != nil {
-			l.WithError(err).Error("rolesViewHandler rsUC.GetPermissions")
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		permissions := make([]string, len(pSl))
-		for i := range pSl {
-			permissions[i] = pSl[i].String()
-		}
-		sas, err := rsUCc.GetServiceAccounts(id)
-		if err != nil {
-			l.WithError(err).Error("rolesViewHandler rsUC.GetServiceAccounts")
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		sasFiltered, err := keepJSONFields(sas, "id", "name", "picture", "email")
-		if err != nil {
-			l.WithError(err).Error("rolesViewHandler keepJSONFields(sas)")
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		body := map[string]interface{}{
-			"id":              role.ID,
-			"name":            role.Name,
-			"permissions":     permissions,
-			"serviceAccounts": sasFiltered,
-		}
-		bts, err := json.Marshal(body)
+		bts, err := json.Marshal(role)
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)

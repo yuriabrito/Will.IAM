@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/ghostec/Will.IAM/errors"
+	"github.com/ghostec/Will.IAM/models"
 	"github.com/ghostec/Will.IAM/usecases"
 	"github.com/gorilla/mux"
 	"github.com/topfreegames/extensions/middleware"
@@ -16,13 +18,13 @@ func serviceAccountsGetHandler(
 	return func(w http.ResponseWriter, r *http.Request) {
 		l := middleware.GetLogger(r.Context())
 		saID := mux.Vars(r)["id"]
-		sa, err := sasUC.WithContext(r.Context()).Get(saID)
+		sawn, err := sasUC.WithContext(r.Context()).GetWithNested(saID)
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		bts, err := keepJSONFieldsBytes(sa, "id", "name", "email", "picture")
+		bts, err := json.Marshal(sawn)
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -37,27 +39,92 @@ func serviceAccountsCreateHandler(
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		l := middleware.GetLogger(r.Context())
-		body, err := ioutil.ReadAll(r.Body)
-		defer r.Body.Close()
+		sawn, err := processServiceAccountWithNestedFromReq(r, sasUC)
 		if err != nil {
-			l.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
+			statusCode := http.StatusInternalServerError
+			if _, ok := err.(*errors.UserDoesntHaveAllPermissionsError); ok {
+				statusCode = err.(*errors.UserDoesntHaveAllPermissionsError).
+					StatusCode()
+			}
+			l.WithError(err).Error(
+				"serviceAccountsCreateHandler processServiceAccountWithNestedFromReq",
+			)
+			w.WriteHeader(statusCode)
 			return
 		}
-		sawn := &usecases.ServiceAccountWithNested{}
-		err = json.Unmarshal(body, sawn)
 		v := sawn.Validate()
 		if !v.Valid() {
 			WriteBytes(w, http.StatusUnprocessableEntity, v.Errors())
 			return
 		}
-		// TODO: check wheter creatorSA has ownership of sawn.PermissionsStrings
+		sawn.ID = mux.Vars(r)["id"]
 		if err := sasUC.WithContext(r.Context()).CreateWithNested(sawn); err != nil {
 			l.WithError(err).Error("sasUC.CreateWithNested failed")
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 		w.WriteHeader(http.StatusCreated)
 	}
+}
+
+func serviceAccountsEditHandler(
+	sasUC usecases.ServiceAccounts,
+) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		l := middleware.GetLogger(r.Context())
+		sawn, err := processServiceAccountWithNestedFromReq(r, sasUC)
+		if err != nil {
+			statusCode := http.StatusInternalServerError
+			if _, ok := err.(*errors.UserDoesntHaveAllPermissionsError); ok {
+				statusCode = err.(*errors.UserDoesntHaveAllPermissionsError).
+					StatusCode()
+			}
+			l.WithError(err).Error(
+				"serviceAccountsEditHandler processServiceAccountWithNestedFromReq",
+			)
+			w.WriteHeader(statusCode)
+			return
+		}
+		v := sawn.Validate()
+		if !v.Valid() {
+			WriteBytes(w, http.StatusUnprocessableEntity, v.Errors())
+			return
+		}
+		sawn.ID = mux.Vars(r)["id"]
+		if err := sasUC.WithContext(r.Context()).EditWithNested(sawn); err != nil {
+			l.WithError(err).Error("sasUC.EditWithNested failed")
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func processServiceAccountWithNestedFromReq(
+	r *http.Request, sasUC usecases.ServiceAccounts,
+) (*usecases.ServiceAccountWithNested, error) {
+	body, err := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+	sawn := &usecases.ServiceAccountWithNested{}
+	err = json.Unmarshal(body, sawn)
+	if err != nil {
+		return nil, err
+	}
+	saID, _ := getServiceAccountID(r.Context())
+	sawn.Permissions, err = models.BuildPermissions(sawn.PermissionsStrings)
+	if err != nil {
+		return nil, err
+	}
+	has, err := sasUC.WithContext(r.Context()).
+		HasAllOwnerPermissions(saID, sawn.Permissions)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, errors.NewUserDoesntHaveAllPermissionsError()
+	}
+	return sawn, nil
 }
 
 func serviceAccountsListHandler(
