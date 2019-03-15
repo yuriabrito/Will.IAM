@@ -250,6 +250,16 @@ func (a *App) GetRouter() *mux.Router {
 	).
 		Methods("POST").Name("serviceAccountsCreateHandler")
 
+	r.Handle(
+		"/service_accounts/{id}",
+		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
+			"EditServiceAccounts", "{id}",
+		), http.HandlerFunc(
+			serviceAccountsEditHandler(sasUC),
+		))),
+	).
+		Methods("PUT").Name("serviceAccountsEditHandler")
+
 	rsUC := usecases.NewRoles(repo)
 
 	r.Handle(

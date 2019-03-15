@@ -12,7 +12,7 @@ type Roles interface {
 	Create(*RoleWithNested) error
 	CreatePermission(string, *models.Permission) error
 	Update(*RoleWithNested) error
-	Get(string) (*models.Role, error)
+	Get(string) (map[string]interface{}, error)
 	GetPermissions(string) ([]models.Permission, error)
 	GetServiceAccounts(string) ([]models.ServiceAccount, error)
 	WithNamePrefix(string, int) ([]models.Role, error)
@@ -128,8 +128,38 @@ func (rs roles) List() ([]models.Role, error) {
 	return rs.repo.Roles.List()
 }
 
-func (rs roles) Get(id string) (*models.Role, error) {
-	return rs.repo.Roles.Get(id)
+func (rs roles) Get(id string) (map[string]interface{}, error) {
+	r, err := rs.repo.Roles.Get(id)
+	if err != nil {
+		return nil, err
+	}
+	pSl, err := rs.GetPermissions(id)
+	if err != nil {
+		return nil, err
+	}
+	permissions := make([]string, len(pSl))
+	for i := range pSl {
+		permissions[i] = pSl[i].String()
+	}
+	sas, err := rs.GetServiceAccounts(id)
+	if err != nil {
+		return nil, err
+	}
+	sasFiltered := make([]map[string]interface{}, len(sas))
+	for i, sa := range sas {
+		sasFiltered[i] = map[string]interface{}{
+			"id":      sa.ID,
+			"name":    sa.Name,
+			"picture": sa.Picture,
+			"email":   sa.Email,
+		}
+	}
+	return map[string]interface{}{
+		"id":              r.ID,
+		"name":            r.Name,
+		"permissions":     permissions,
+		"serviceAccounts": sasFiltered,
+	}, nil
 }
 
 // NewRoles ctor

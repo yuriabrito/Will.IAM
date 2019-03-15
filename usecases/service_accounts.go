@@ -17,6 +17,7 @@ type ServiceAccounts interface {
 	CreateKeyPairType(string) (*models.ServiceAccount, error)
 	CreateOAuth2Type(string, string) (*models.ServiceAccount, error)
 	CreateWithNested(*ServiceAccountWithNested) error
+	EditWithNested(*ServiceAccountWithNested) error
 	AuthenticateAccessToken(string) (*models.AccessTokenAuth, error)
 	AuthenticateKeyPair(string, string) (string, error)
 	HasPermissionString(string, string) (bool, error)
@@ -26,6 +27,7 @@ type ServiceAccounts interface {
 	GetPermissions(string) ([]models.Permission, error)
 	CreatePermission(string, *models.Permission) error
 	Get(string) (*models.ServiceAccount, error)
+	GetWithNested(string) (map[string]interface{}, error)
 	ForEmail(string) (*models.ServiceAccount, error)
 	List() ([]models.ServiceAccount, error)
 	Search(string) ([]models.ServiceAccount, error)
@@ -99,11 +101,66 @@ func (sas serviceAccounts) CreateWithNested(
 				return err
 			}
 		}
-		if len(sawn.Permissions) > 0 {
-			// TODO: add permissions to base role
+		for i := range sawn.Permissions {
+			sawn.Permissions[i].RoleID = sa.BaseRoleID
+			if err := repo.Permissions.Create(&sawn.Permissions[i]); err != nil {
+				return err
+			}
 		}
 		return nil
 	})
+}
+
+func (sas serviceAccounts) EditWithNested(
+	sawn *ServiceAccountWithNested,
+) error {
+	return sas.repo.WithPGTx(sas.ctx, func(repo *repositories.All) error {
+		sa, err := repo.ServiceAccounts.Get(sawn.ID)
+		if err != nil {
+			return err
+		}
+		sa.Name = sawn.Name
+		sa.Email = sawn.Name
+		if err := repo.ServiceAccounts.Update(sa); err != nil {
+			return err
+		}
+		if err := repo.Roles.DropPermissions(sa.BaseRoleID); err != nil {
+			return err
+		}
+		for i := range sawn.Permissions {
+			sawn.Permissions[i].RoleID = sa.BaseRoleID
+			if err := repo.Permissions.Create(&sawn.Permissions[i]); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+// GetWithNested returns a service account by id with permissions and roles
+func (sas serviceAccounts) GetWithNested(
+	serviceAccountID string,
+) (map[string]interface{}, error) {
+	sa, err := sas.repo.ServiceAccounts.Get(serviceAccountID)
+	if err != nil {
+		return nil, err
+	}
+	pSl, err := sas.repo.Permissions.ForRole(sa.BaseRoleID)
+	if err != nil {
+		return nil, err
+	}
+	permissions := make([]string, len(pSl))
+	for i := range pSl {
+		permissions[i] = pSl[i].String()
+	}
+	return map[string]interface{}{
+		"id":                 sa.ID,
+		"name":               sa.Name,
+		"email":              sa.Email,
+		"picture":            sa.Picture,
+		"authenticationType": sa.AuthenticationType,
+		"permissions":        permissions,
+	}, nil
 }
 
 func (sas serviceAccounts) Create(sa *models.ServiceAccount) error {
