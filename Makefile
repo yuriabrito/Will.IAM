@@ -7,7 +7,7 @@ database=postgres://postgres:$(project)@localhost:8432/$(project)?sslmode=disabl
 database_test=postgres://postgres:$(project)@localhost:8432/$(project_test)?sslmode=disable
 platform=darwin
 
-setup: setup-gin setup-project
+setup: setup-gin setup-project setup-deps
 
 setup-gin:
 	@go get github.com/codegangsta/gin
@@ -15,6 +15,8 @@ setup-gin:
 setup-project:
 	@go get -u github.com/golang/dep/cmd/dep
 	@dep ensure
+
+setup-deps:
 	@make deps
 	@make migrate
 
