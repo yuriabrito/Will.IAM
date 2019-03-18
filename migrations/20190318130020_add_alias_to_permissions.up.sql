@@ -1,0 +1,1 @@
+ALTER TABLE permissions ADD COLUMN alias VARCHAR(500);

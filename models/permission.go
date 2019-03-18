@@ -110,6 +110,7 @@ type Permission struct {
 	OwnershipLevel    OwnershipLevel    `json:"ownershipLevel" pg:"ownership_level"`
 	Action            Action            `json:"action" pg:"action"`
 	ResourceHierarchy ResourceHierarchy `json:"resourceHierarchy" pg:"resource_hierarchy"`
+	Alias             string            `json:"alias" pg:"alias"`
 }
 
 // ValidatePermission validates a permission in string format

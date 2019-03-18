@@ -139,6 +139,11 @@ func processRoleWithNestedFromReq(
 	if err != nil {
 		return nil, err
 	}
+	for i := range rwn.PermissionsStrings {
+		if alias, ok := rwn.PermissionsAliases[rwn.PermissionsStrings[i]]; ok {
+			rwn.Permissions[i].Alias = alias
+		}
+	}
 	has, err := sasUC.WithContext(r.Context()).
 		HasAllOwnerPermissions(saID, rwn.Permissions)
 	if err != nil {

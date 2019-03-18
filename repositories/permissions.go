@@ -31,7 +31,7 @@ func (ps *permissions) Get(id string) (*models.Permission, error) {
 	p := new(models.Permission)
 	if info, err := ps.storage.PG.DB.Query(
 		p, `SELECT id, role_id, service, ownership_level,
-action, resource_hierarchy FROM permissions
+action, resource_hierarchy, alias FROM permissions
 	WHERE id = ?`, id,
 	); err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ func (ps *permissions) ForServiceAccount(
 	permissions := []models.Permission{}
 	if _, err := ps.storage.PG.DB.Query(
 		&permissions, `SELECT p.id, p.role_id, p.service, p.ownership_level,
-p.action, p.resource_hierarchy FROM permissions p
+p.action, p.resource_hierarchy, p.alias FROM permissions p
 	JOIN role_bindings rb ON rb.role_id = p.role_id
 	WHERE rb.service_account_id = ?`, saID,
 	); err != nil {
@@ -77,9 +77,9 @@ func (ps *permissions) ForRole(
 ) ([]models.Permission, error) {
 	permissions := []models.Permission{}
 	if _, err := ps.storage.PG.DB.Query(
-		&permissions, `SELECT p.id, p.role_id, p.service, p.ownership_level,
-p.action, p.resource_hierarchy FROM permissions p
-	WHERE p.role_id = ?`, roleID,
+		&permissions, `SELECT id, role_id, service, ownership_level,
+action, resource_hierarchy, alias FROM permissions
+	WHERE role_id = ?`, roleID,
 	); err != nil {
 		return nil, err
 	}
@@ -89,9 +89,9 @@ p.action, p.resource_hierarchy FROM permissions p
 func (ps *permissions) Create(p *models.Permission) error {
 	_, err := ps.storage.PG.DB.Exec(
 		`INSERT INTO permissions (role_id, service, ownership_level, action,
-		resource_hierarchy) VALUES (?, ?, ?, ?, ?)
-		ON CONFLICT DO NOTHING RETURNING id`, p.RoleID,
-		p.Service, p.OwnershipLevel, p.Action, p.ResourceHierarchy,
+		resource_hierarchy, alias) VALUES (?, ?, ?, ?, ?, ?)
+		ON CONFLICT DO NOTHING RETURNING id`, p.RoleID, p.Service, p.OwnershipLevel,
+		p.Action, p.ResourceHierarchy, p.Alias,
 	)
 	return err
 }
