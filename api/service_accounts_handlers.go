@@ -61,6 +61,7 @@ func serviceAccountsCreateHandler(
 		if err := sasUC.WithContext(r.Context()).CreateWithNested(sawn); err != nil {
 			l.WithError(err).Error("sasUC.CreateWithNested failed")
 			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 		w.WriteHeader(http.StatusCreated)
 	}
@@ -115,6 +116,11 @@ func processServiceAccountWithNestedFromReq(
 	sawn.Permissions, err = models.BuildPermissions(sawn.PermissionsStrings)
 	if err != nil {
 		return nil, err
+	}
+	for i := range sawn.PermissionsStrings {
+		if alias, ok := sawn.PermissionsAliases[sawn.PermissionsStrings[i]]; ok {
+			sawn.Permissions[i].Alias = alias
+		}
 	}
 	has, err := sasUC.WithContext(r.Context()).
 		HasAllOwnerPermissions(saID, sawn.Permissions)

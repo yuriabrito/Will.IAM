@@ -68,6 +68,7 @@ type RoleWithNested struct {
 	ID                 string              `json:"-"`
 	Name               string              `json:"name"`
 	PermissionsStrings []string            `json:"permissions"`
+	PermissionsAliases map[string]string   `json:"permissionsAlises"`
 	Permissions        []models.Permission `json:"-"`
 	ServiceAccountsIDs []string            `json:"serviceAccountsIds"`
 }
@@ -137,9 +138,14 @@ func (rs roles) Get(id string) (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	permissionsAliases := map[string]string{}
 	permissions := make([]string, len(pSl))
 	for i := range pSl {
-		permissions[i] = pSl[i].String()
+		str := pSl[i].String()
+		permissions[i] = str
+		if pSl[i].Alias != "" {
+			permissionsAliases[str] = pSl[i].Alias
+		}
 	}
 	sas, err := rs.GetServiceAccounts(id)
 	if err != nil {
@@ -155,10 +161,11 @@ func (rs roles) Get(id string) (map[string]interface{}, error) {
 		}
 	}
 	return map[string]interface{}{
-		"id":              r.ID,
-		"name":            r.Name,
-		"permissions":     permissions,
-		"serviceAccounts": sasFiltered,
+		"id":                 r.ID,
+		"name":               r.Name,
+		"permissions":        permissions,
+		"permissionsAliases": permissionsAliases,
+		"serviceAccounts":    sasFiltered,
 	}, nil
 }
 

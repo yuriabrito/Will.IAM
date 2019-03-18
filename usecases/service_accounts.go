@@ -64,12 +64,13 @@ type ServiceAccountWithNested struct {
 	Name               string              `json:"name"`
 	Email              string              `json:"email"`
 	PermissionsStrings []string            `json:"permissions"`
+	PermissionsAliases map[string]string   `json:"permissionsAlises"`
 	Permissions        []models.Permission `json:"-"`
 	RolesIDs           []string            `json:"rolesIds"`
 	AuthenticationType models.AuthenticationType
 }
 
-// Validate RoleWithNested fields
+// Validate ServiceAccountWithNested fields
 func (sawn ServiceAccountWithNested) Validate() models.Validation {
 	v := &models.Validation{}
 	if sawn.Name == "" {
@@ -149,9 +150,14 @@ func (sas serviceAccounts) GetWithNested(
 	if err != nil {
 		return nil, err
 	}
+	permissionsAliases := map[string]string{}
 	permissions := make([]string, len(pSl))
 	for i := range pSl {
-		permissions[i] = pSl[i].String()
+		str := pSl[i].String()
+		permissions[i] = str
+		if pSl[i].Alias != "" {
+			permissionsAliases[str] = pSl[i].Alias
+		}
 	}
 	return map[string]interface{}{
 		"id":                 sa.ID,
@@ -160,6 +166,7 @@ func (sas serviceAccounts) GetWithNested(
 		"picture":            sa.Picture,
 		"authenticationType": sa.AuthenticationType,
 		"permissions":        permissions,
+		"permissionsAliases": permissionsAliases,
 	}, nil
 }
 
