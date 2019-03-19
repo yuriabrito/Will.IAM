@@ -212,13 +212,19 @@ func (a *App) GetRouter() *mux.Router {
 	).
 		Methods("PUT").Name("servicesUpdateHandler")
 
+	// r.Handle(
+	// 	"/service_accounts",
+	// 	authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
+	// 		"ListServiceAccounts", "*",
+	// 	), http.HandlerFunc(
+	// 		serviceAccountsListHandler(sasUC),
+	// 	))),
+	// ).
+	// 	Methods("GET").Name("serviceAccountsListHandler")
+
 	r.Handle(
 		"/service_accounts",
-		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
-			"ListServiceAccounts", "*",
-		), http.HandlerFunc(
-			serviceAccountsListHandler(sasUC),
-		))),
+		authMiddle(http.HandlerFunc(serviceAccountsListHandler(sasUC))),
 	).
 		Methods("GET").Name("serviceAccountsListHandler")
 
@@ -234,9 +240,7 @@ func (a *App) GetRouter() *mux.Router {
 
 	r.Handle(
 		"/service_accounts/{id}",
-		authMiddle(http.HandlerFunc(
-			serviceAccountsGetHandler(sasUC),
-		)),
+		authMiddle(http.HandlerFunc(serviceAccountsGetHandler(sasUC))),
 	).
 		Methods("GET").Name("serviceAccountsGetHandler")
 
