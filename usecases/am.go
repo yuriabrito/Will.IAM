@@ -57,8 +57,6 @@ func (a am) List(prefix string) ([]models.AM, error) {
 		return a.listWillIAMPermissions(prefix)
 	}
 	return a.listServicePermissions(service, prefix)
-	// TODO: find service by name and use it's /am (AMURL)
-	return []models.AM{}, nil
 }
 
 func (a am) listServices(prefix string) ([]string, error) {
@@ -111,6 +109,7 @@ func (a am) listWillIAMPermissions(prefix string) ([]models.AM, error) {
 
 func (a am) listWillIAMActions(prefix string) ([]string, error) {
 	all := append(constants.RolesActions, constants.ServiceAccountsActions...)
+	all = append(all, constants.ServicesActions...)
 	keep := []string{}
 	for i := range all {
 		if ok := strings.HasPrefix(all[i], prefix); ok {
@@ -147,7 +146,7 @@ func (a am) listWillIAMResourceHierarchies(
 func (a am) listRolesActionsRH(
 	action, prefix string,
 ) ([]models.AM, error) {
-	if action == "CreateRole" || action == "ListRoles" {
+	if action == "CreateRoles" || action == "ListRoles" {
 		return []models.AM{}, nil
 	}
 	rs, err := a.rsUC.WithNamePrefix(prefix, 10)
@@ -195,11 +194,14 @@ func (a am) listServicePermissions(
 	}
 	for i := range ams {
 		ams[i].Prefix = fmt.Sprintf("%s::%s", service, ams[i].Prefix)
+		if ams[i].Alias != "" {
+			ams[i].Alias = fmt.Sprintf("%s::%s", service, ams[i].Alias)
+		}
 	}
 	return ams, nil
 }
 
-// New am ctor
+// NewAM ctor
 func NewAM(repo *repositories.All, rsUC Roles) AM {
 	return &am{repo: repo, http: extensionsHttp.New(), rsUC: rsUC}
 }
