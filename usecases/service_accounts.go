@@ -64,7 +64,7 @@ type ServiceAccountWithNested struct {
 	Name               string              `json:"name"`
 	Email              string              `json:"email"`
 	PermissionsStrings []string            `json:"permissions"`
-	PermissionsAliases map[string]string   `json:"permissionsAlises"`
+	PermissionsAliases map[string]string   `json:"permissionsAliases"`
 	Permissions        []models.Permission `json:"-"`
 	RolesIDs           []string            `json:"rolesIds"`
 	AuthenticationType models.AuthenticationType
@@ -335,10 +335,12 @@ func (sas serviceAccounts) HasPermissionString(
 func (sas serviceAccounts) HasAllOwnerPermissions(
 	serviceAccountID string, permissions []models.Permission,
 ) (bool, error) {
+	psCpy := make([]models.Permission, len(permissions))
 	for i := range permissions {
-		permissions[i].OwnershipLevel = models.OwnershipLevels.Owner
+		psCpy[i] = permissions[i]
+		psCpy[i].OwnershipLevel = models.OwnershipLevels.Owner
 	}
-	has, err := sas.HasPermissions(serviceAccountID, permissions)
+	has, err := sas.HasPermissions(serviceAccountID, psCpy)
 	if err != nil {
 		return false, err
 	}

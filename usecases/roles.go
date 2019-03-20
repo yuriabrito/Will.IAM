@@ -68,7 +68,7 @@ type RoleWithNested struct {
 	ID                 string              `json:"-"`
 	Name               string              `json:"name"`
 	PermissionsStrings []string            `json:"permissions"`
-	PermissionsAliases map[string]string   `json:"permissionsAlises"`
+	PermissionsAliases map[string]string   `json:"permissionsAliases"`
 	Permissions        []models.Permission `json:"-"`
 	ServiceAccountsIDs []string            `json:"serviceAccountsIds"`
 }
