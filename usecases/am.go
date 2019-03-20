@@ -194,9 +194,6 @@ func (a am) listServicePermissions(
 	}
 	for i := range ams {
 		ams[i].Prefix = fmt.Sprintf("%s::%s", service, ams[i].Prefix)
-		if ams[i].Alias != "" {
-			ams[i].Alias = fmt.Sprintf("%s::%s", service, ams[i].Alias)
-		}
 	}
 	return ams, nil
 }
