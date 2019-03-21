@@ -11,7 +11,7 @@ type ServiceAccount struct {
 	Email              string             `json:"email" pg:"email"`
 	Picture            string             `json:"picture" pg:"picture"`
 	BaseRoleID         string             `json:"baseRoleId" pg:"base_role_id"`
-	AuthenticationType AuthenticationType `json:"-" pg:"-"`
+	AuthenticationType AuthenticationType `json:"authenticationType" pg:"-"`
 	CreatedUpdatedAt
 }
 

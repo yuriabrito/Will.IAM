@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -138,19 +139,33 @@ func serviceAccountsListHandler(
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		l := middleware.GetLogger(r.Context())
-		saSl, err := sasUC.WithContext(r.Context()).List()
+		listOptions, err := buildListOptions(r)
+		if err != nil {
+			Write(
+				w, http.StatusUnprocessableEntity,
+				fmt.Sprintf(`{ "error": "%s"  }`, err.Error()),
+			)
+			return
+		}
+		saSl, count, err := sasUC.WithContext(r.Context()).List(listOptions)
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		bts, err := keepJSONFieldsBytes(saSl, "id", "name", "email", "picture")
+		results, err := keepJSONFields(
+			saSl, "id", "authenticationType", "name", "email", "picture",
+		)
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		WriteBytes(w, 200, bts)
+		ret := map[string]interface{}{
+			"count":   count,
+			"results": results,
+		}
+		WriteJSON(w, 200, ret)
 	}
 }
 

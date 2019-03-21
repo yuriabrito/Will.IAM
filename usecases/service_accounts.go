@@ -29,7 +29,7 @@ type ServiceAccounts interface {
 	Get(string) (*models.ServiceAccount, error)
 	GetWithNested(string) (map[string]interface{}, error)
 	ForEmail(string) (*models.ServiceAccount, error)
-	List() ([]models.ServiceAccount, error)
+	List(*repositories.ListOptions) ([]models.ServiceAccount, int64, error)
 	Search(string) ([]models.ServiceAccount, error)
 	GetRoles(string) ([]models.Role, error)
 	WithContext(context.Context) ServiceAccounts
@@ -253,12 +253,18 @@ func (sas serviceAccounts) ForEmail(
 }
 
 // List returns a list of all service accounts
-func (sas serviceAccounts) List() ([]models.ServiceAccount, error) {
-	saSl, err := sas.repo.ServiceAccounts.List()
+func (sas serviceAccounts) List(
+	lo *repositories.ListOptions,
+) ([]models.ServiceAccount, int64, error) {
+	saSl, err := sas.repo.ServiceAccounts.List(lo)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return saSl, nil
+	count, err := sas.repo.ServiceAccounts.Count()
+	if err != nil {
+		return nil, 0, err
+	}
+	return saSl, count, nil
 }
 
 // Search searches over Service Accounts names and emails
