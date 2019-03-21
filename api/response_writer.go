@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
 )
 
@@ -42,4 +43,14 @@ func WriteBytes(w http.ResponseWriter, status int, text []byte) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	w.Write(text)
+}
+
+//WriteJSON to the response and with the status code
+func WriteJSON(w http.ResponseWriter, status int, i interface{}) {
+	bts, err := json.Marshal(i)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	WriteBytes(w, status, bts)
 }

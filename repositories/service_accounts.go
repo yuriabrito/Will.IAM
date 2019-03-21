@@ -10,7 +10,8 @@ import (
 // ServiceAccounts repository
 type ServiceAccounts interface {
 	Get(string) (*models.ServiceAccount, error)
-	List() ([]models.ServiceAccount, error)
+	List(*ListOptions) ([]models.ServiceAccount, error)
+	Count() (int64, error)
 	Search(string) ([]models.ServiceAccount, error)
 	ForEmail(string) (*models.ServiceAccount, error)
 	ForKeyPair(string, string) (*models.ServiceAccount, error)
@@ -42,19 +43,42 @@ func (sas serviceAccounts) Get(id string) (*models.ServiceAccount, error) {
 	if sa.ID == "" {
 		return nil, errors.NewEntityNotFoundError(models.ServiceAccount{}, id)
 	}
+	if sa.KeyID != "" {
+		sa.AuthenticationType = models.AuthenticationTypes.KeyPair
+	}
 	return sa, nil
 }
 
-func (sas serviceAccounts) List() ([]models.ServiceAccount, error) {
+func (sas serviceAccounts) List(
+	lo *ListOptions,
+) ([]models.ServiceAccount, error) {
 	var saSl []models.ServiceAccount
 	if _, err := sas.storage.PG.DB.Query(
 		&saSl,
 		`SELECT id, name, email, picture FROM service_accounts
-		ORDER BY created_at DESC`,
+		ORDER BY name ASC LIMIT ? OFFSET ?`, lo.PageSize, lo.Page*lo.PageSize,
 	); err != nil {
 		return nil, err
 	}
+	for i := range saSl {
+		authType := models.AuthenticationTypes.OAuth2
+		if saSl[i].KeyID != "" {
+			authType = models.AuthenticationTypes.KeyPair
+		}
+		saSl[i].AuthenticationType = authType
+	}
 	return saSl, nil
+}
+
+func (sas serviceAccounts) Count() (int64, error) {
+	var count int64
+	if _, err := sas.storage.PG.DB.Query(
+		&count,
+		`SELECT count(*) FROM service_accounts`,
+	); err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 func (sas serviceAccounts) Search(

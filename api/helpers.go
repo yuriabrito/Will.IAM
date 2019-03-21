@@ -2,7 +2,13 @@ package api
 
 import (
 	"encoding/json"
+	"net/http"
 	"reflect"
+	"strconv"
+
+	"github.com/ghostec/Will.IAM/constants"
+	"github.com/ghostec/Will.IAM/errors"
+	"github.com/ghostec/Will.IAM/repositories"
 )
 
 func keepJSONFieldsSl(
@@ -59,4 +65,28 @@ func keepJSONFieldsBytes(i interface{}, keep ...string) ([]byte, error) {
 		return nil, err
 	}
 	return json.Marshal(ri)
+}
+
+func buildListOptions(r *http.Request) (*repositories.ListOptions, error) {
+	str := r.URL.Query().Get("page")
+	if str == "" {
+		str = "0"
+	}
+	page, err := strconv.ParseInt(str, 10, 32)
+	if err != nil {
+		return nil, errors.NewInvalidPageError(str)
+	}
+	pageSize := constants.DefaultListOptionsPageSize
+	str = r.URL.Query().Get("pageSize")
+	if str != "" {
+		pageSize64, err := strconv.ParseInt(str, 10, 32)
+		if err != nil {
+			return nil, errors.NewInvalidPageSizeError(str)
+		}
+		pageSize = int(pageSize64)
+	}
+	return &repositories.ListOptions{
+		Page:     int(page),
+		PageSize: pageSize,
+	}, nil
 }
