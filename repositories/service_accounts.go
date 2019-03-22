@@ -89,10 +89,17 @@ func (sas serviceAccounts) Search(
 		&saSl,
 		`SELECT id, name, email, picture FROM service_accounts
 		WHERE name ILIKE ?0 OR email ILIKE ?0
-		ORDER BY created_at DESC`,
+		ORDER BY name ASC`,
 		fmt.Sprintf("%%%s%%", term),
 	); err != nil {
 		return nil, err
+	}
+	for i := range saSl {
+		authType := models.AuthenticationTypes.OAuth2
+		if saSl[i].KeyID != "" {
+			authType = models.AuthenticationTypes.KeyPair
+		}
+		saSl[i].AuthenticationType = authType
 	}
 	return saSl, nil
 }
