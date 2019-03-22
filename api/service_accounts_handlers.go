@@ -185,7 +185,9 @@ func serviceAccountsSearchHandler(
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		bts, err := keepJSONFieldsBytes(saSl, "id", "name", "email", "picture")
+		bts, err := keepJSONFieldsBytes(
+			saSl, "id", "authenticationType", "name", "email", "picture",
+		)
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
