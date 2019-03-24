@@ -55,13 +55,16 @@ func TestAMListHandler(t *testing.T) {
 			expectedOutput: []string{
 				"Will.IAM::CreateRoles", "Will.IAM::EditRole", "Will.IAM::ListRoles",
 				"Will.IAM::CreateServiceAccounts", "Will.IAM::EditServiceAccount",
-				"Will.IAM::ListServiceAccounts",
+				"Will.IAM::ListServiceAccounts", "Will.IAM::CreateServices",
+				"Will.IAM::EditService", "Will.IAM::ListServices",
 			},
 		},
 		testCase{
 			reqPath: "/am?prefix=Will.IAM::Edit",
 			expectedOutput: []string{
-				"Will.IAM::EditRole", "Will.IAM::EditServiceAccount",
+				"Will.IAM::EditRole",
+				"Will.IAM::EditServiceAccount",
+				"Will.IAM::EditService",
 			},
 		},
 		testCase{

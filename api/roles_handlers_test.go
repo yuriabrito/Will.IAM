@@ -132,8 +132,8 @@ func TestRolesUpdateHandlerRootSA(t *testing.T) {
 		t.Errorf("Unexpected error %s", err.Error())
 		return
 	}
-	if r.Name != "new role name" {
-		t.Errorf("Expected role name to be 'new role name'. Got %s", r.Name)
+	if r["name"] != "new role name" {
+		t.Errorf("Expected role name to be 'new role name'. Got %s", r["name"])
 	}
 
 	pSl, err := rsUC.GetPermissions(creatorSA.BaseRoleID)
@@ -211,7 +211,7 @@ func TestRolesUpdateHandlerNonRootSA(t *testing.T) {
 		t.Errorf("Unexpected error %s", err.Error())
 		return
 	}
-	if r.Name == "new role name" {
+	if r["name"] == "new role name" {
 		t.Error("Expected role name to be != 'new role name'")
 	}
 
