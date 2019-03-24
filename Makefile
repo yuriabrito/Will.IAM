@@ -2,7 +2,9 @@ testable_packages=$(shell go list ./... | egrep -v 'constants|mocks|testing')
 project=$(shell basename $(PWD))
 project_test=${project}-test
 pg_dep=$(project)_postgres_1
-test_packages=`find . -type f -name "*.go" ! \( -path "*vendor*" \) | sed -En "s/([^\.])\/.*/\1/p" | uniq`
+test_packages=`find . -type d -name "docker_data" -prune -o \
+							-type f -name "*.go" ! \( -path "*vendor*" \) -print \
+							| sed -En "s/([^\.])\/.*/\1/p" | uniq`
 database=postgres://postgres:$(project)@localhost:8432/$(project)?sslmode=disable
 database_test=postgres://postgres:$(project)@localhost:8432/$(project_test)?sslmode=disable
 platform=darwin
@@ -94,11 +96,17 @@ integration:
 gather-unit-profiles:
 	@mkdir -p _build
 	@echo "mode: count" > _build/coverage-unit.out
-	@bash -c 'for f in $$(find . -name "*.coverprofile"); do tail -n +2 $$f >> _build/coverage-unit.out; done'
-	@find . -name "*.coverprofile" -delete
+	@bash -c 'for f in $$(find . -type d -name "docker_data" -prune -o -type f \
+		-name "*.coverprofile" -print); \
+		do tail -n +2 $$f >> _build/coverage-unit.out; done'
+	@find . -type d -name "docker_data" -prune -o \
+		-name "*.coverprofile" -exec rm {} +
 
 gather-integration-profiles:
 	@mkdir -p _build
 	@echo "mode: count" > _build/coverage-integration.out
-	@bash -c 'for f in $$(find . -name "*.coverprofile"); do tail -n +2 $$f >> _build/coverage-integration.out; done'
-	@find . -name "*.coverprofile" -delete
+	@bash -c 'for f in $$(find . -type d -name "docker_data" -prune -o -type f \
+		-name "*.coverprofile" -print); \
+		do tail -n +2 $$f >> _build/coverage-integration.out; done'
+	@find . -type d -name "docker_data" -prune -o \
+		-name "*.coverprofile" -exec rm {} +
