@@ -390,10 +390,32 @@ func (sas serviceAccounts) HasPermissions(
 	return has, nil
 }
 
+func serviceAccountHasPermissions(
+	repo *repositories.All,
+	serviceAccountID string,
+	permissions []models.Permission,
+) ([]bool, error) {
+	saPermissions, err := serviceAccountGetPermissions(repo, serviceAccountID)
+	if err != nil {
+		return nil, err
+	}
+	has := make([]bool, len(permissions))
+	for i := range permissions {
+		has[i] = permissions[i].IsPresent(saPermissions)
+	}
+	return has, nil
+}
+
 func (sas serviceAccounts) GetPermissions(
 	serviceAccountID string,
 ) ([]models.Permission, error) {
-	return sas.repo.Permissions.ForServiceAccount(serviceAccountID)
+	return serviceAccountGetPermissions(sas.repo, serviceAccountID)
+}
+
+func serviceAccountGetPermissions(
+	repo *repositories.All, serviceAccountID string,
+) ([]models.Permission, error) {
+	return repo.Permissions.ForServiceAccount(serviceAccountID)
 }
 
 func (sas serviceAccounts) CreatePermission(

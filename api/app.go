@@ -356,9 +356,9 @@ func (a *App) GetRouter() *mux.Router {
 
 	amUseCase := usecases.NewAM(repo, rsUC)
 
-	r.HandleFunc(
+	r.Handle(
 		"/am",
-		amListHandler(amUseCase),
+		authMiddle(http.HandlerFunc(amListHandler(amUseCase))),
 	).
 		Methods("GET").Name("permissionsHasHandler")
 

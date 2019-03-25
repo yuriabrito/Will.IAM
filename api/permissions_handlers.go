@@ -155,7 +155,6 @@ func permissionsHasManyHandler(
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-
 		permissions := make([]string, 0)
 		err = json.Unmarshal(body, &permissions)
 		if err != nil {
@@ -163,15 +162,14 @@ func permissionsHasManyHandler(
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-
 		saID, _ := getServiceAccountID(r.Context())
-		resultStatus, err := sasUC.WithContext(r.Context()).HasPermissionsStrings(saID, permissions)
+		resultStatus, err :=
+			sasUC.WithContext(r.Context()).HasPermissionsStrings(saID, permissions)
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-
 		bts, err := json.Marshal(resultStatus)
 		if err != nil {
 			l.WithError(err).Error("permissionsHasMany json.Marshal error")

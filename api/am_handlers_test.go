@@ -71,6 +71,10 @@ func TestAMListHandler(t *testing.T) {
 			reqPath:        "/am?prefix=Will.IAM::EditR",
 			expectedOutput: []string{"Will.IAM::EditRole"},
 		},
+		testCase{
+			reqPath:        "/am?prefix=Will.IAM::CreateRoles::",
+			expectedOutput: []string{"Will.IAM::CreateRoles::*"},
+		},
 	}
 	for _, tt := range testCases {
 		req, _ := http.NewRequest("GET", tt.reqPath, nil)
@@ -100,6 +104,14 @@ func TestAMListHandler(t *testing.T) {
 					"Expected suggs[%d] to be %s. Got %s",
 					i, suggs[i]["prefix"].(string), tt.expectedOutput[i],
 				)
+				return
+			}
+			if suggs[i]["complete"].(bool) && suggs[i]["lender"].(bool) != true {
+				t.Errorf("Expected suggs[%d] to be lended by rootSA", i)
+				return
+			}
+			if suggs[i]["complete"].(bool) && suggs[i]["owner"].(bool) != true {
+				t.Errorf("Expected suggs[%d] to be owned by rootSA", i)
 				return
 			}
 		}

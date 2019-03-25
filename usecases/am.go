@@ -16,7 +16,7 @@ import (
 
 // AM define entrypoints for Access Management actions
 type AM interface {
-	List(prefix string) ([]models.AM, error)
+	List(string, string) ([]models.AM, error)
 	WithContext(context.Context) AM
 }
 
@@ -36,7 +36,59 @@ func (a am) WithContext(ctx context.Context) AM {
 	}
 }
 
-func (a am) List(prefix string) ([]models.AM, error) {
+func (a am) List(saID string, prefix string) ([]models.AM, error) {
+	ams, err := a.listPermissions(prefix)
+	if err != nil {
+		return nil, err
+	}
+	ps := []models.Permission{}
+	is := []int{}
+	for i := range ams {
+		if ams[i].Complete {
+			lender, owner, err := buildLenderAndOwnerPermissions(ams[i].Prefix)
+			if err != nil {
+				return nil, err
+			}
+			ps = append(ps, lender)
+			ps = append(ps, owner)
+			is = append(is, i)
+		}
+	}
+	hasSl, err := serviceAccountHasPermissions(a.repo, saID, ps)
+	if err != nil {
+		return nil, err
+	}
+	for i := range is {
+		ams[is[i]].Lender = hasSl[2*i]
+		ams[is[i]].Owner = hasSl[2*i+1]
+	}
+	return ams, nil
+}
+
+func buildLenderAndOwnerPermissions(
+	prefix string,
+) (models.Permission, models.Permission, error) {
+	parts := strings.Split(prefix, "::")
+	buildLevel := func(l string) (models.Permission, error) {
+		level := make([]string, len(parts)+1)
+		level[0] = parts[0]
+		level[1] = l
+		copy(level[2:], parts[1:])
+		str := strings.Join(level, "::")
+		return models.BuildPermission(str)
+	}
+	lender, err := buildLevel(models.OwnershipLevels.Lender.String())
+	if err != nil {
+		return models.Permission{}, models.Permission{}, err
+	}
+	owner, err := buildLevel(models.OwnershipLevels.Owner.String())
+	if err != nil {
+		return models.Permission{}, models.Permission{}, err
+	}
+	return lender, owner, nil
+}
+
+func (a am) listPermissions(prefix string) ([]models.AM, error) {
 	if !strings.Contains(prefix, "::") {
 		services, err := a.listServices(prefix)
 		if err != nil {
