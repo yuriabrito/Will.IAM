@@ -30,7 +30,9 @@ type ServiceAccounts interface {
 	GetWithNested(string) (map[string]interface{}, error)
 	ForEmail(string) (*models.ServiceAccount, error)
 	List(*repositories.ListOptions) ([]models.ServiceAccount, int64, error)
-	Search(string) ([]models.ServiceAccount, error)
+	Search(
+		string, *repositories.ListOptions,
+	) ([]models.ServiceAccount, int64, error)
 	GetRoles(string) ([]models.Role, error)
 	WithContext(context.Context) ServiceAccounts
 }
@@ -260,7 +262,7 @@ func (sas serviceAccounts) List(
 	if err != nil {
 		return nil, 0, err
 	}
-	count, err := sas.repo.ServiceAccounts.Count()
+	count, err := sas.repo.ServiceAccounts.ListCount()
 	if err != nil {
 		return nil, 0, err
 	}
@@ -269,13 +271,17 @@ func (sas serviceAccounts) List(
 
 // Search searches over Service Accounts names and emails
 func (sas serviceAccounts) Search(
-	term string,
-) ([]models.ServiceAccount, error) {
-	saSl, err := sas.repo.ServiceAccounts.Search(term)
+	term string, lo *repositories.ListOptions,
+) ([]models.ServiceAccount, int64, error) {
+	saSl, err := sas.repo.ServiceAccounts.Search(term, lo)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return saSl, nil
+	count, err := sas.repo.ServiceAccounts.SearchCount(term)
+	if err != nil {
+		return nil, 0, err
+	}
+	return saSl, count, nil
 }
 
 // AuthenticateAccessToken verifies if token is valid for email, and sometimes refreshes it

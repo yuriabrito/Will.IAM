@@ -176,16 +176,24 @@ func serviceAccountsSearchHandler(
 		l := middleware.GetLogger(r.Context())
 		qs := r.URL.Query()
 		term := ""
-		if len(qs["permission"]) > 0 {
-			term = qs["permission"][0]
+		if len(qs["term"]) > 0 {
+			term = qs["term"][0]
 		}
-		saSl, err := sasUC.WithContext(r.Context()).Search(term)
+		listOptions, err := buildListOptions(r)
+		if err != nil {
+			Write(
+				w, http.StatusUnprocessableEntity,
+				fmt.Sprintf(`{ "error": "%s"  }`, err.Error()),
+			)
+			return
+		}
+		saSl, count, err := sasUC.WithContext(r.Context()).Search(term, listOptions)
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		bts, err := keepJSONFieldsBytes(
+		results, err := keepJSONFields(
 			saSl, "id", "authenticationType", "name", "email", "picture",
 		)
 		if err != nil {
@@ -193,6 +201,10 @@ func serviceAccountsSearchHandler(
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		WriteBytes(w, 200, bts)
+		ret := map[string]interface{}{
+			"count":   count,
+			"results": results,
+		}
+		WriteJSON(w, 200, ret)
 	}
 }

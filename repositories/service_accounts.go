@@ -11,8 +11,9 @@ import (
 type ServiceAccounts interface {
 	Get(string) (*models.ServiceAccount, error)
 	List(*ListOptions) ([]models.ServiceAccount, error)
-	Count() (int64, error)
-	Search(string) ([]models.ServiceAccount, error)
+	ListCount() (int64, error)
+	Search(string, *ListOptions) ([]models.ServiceAccount, error)
+	SearchCount(string) (int64, error)
 	ForEmail(string) (*models.ServiceAccount, error)
 	ForKeyPair(string, string) (*models.ServiceAccount, error)
 	Create(*models.ServiceAccount) error
@@ -56,7 +57,7 @@ func (sas serviceAccounts) List(
 	if _, err := sas.storage.PG.DB.Query(
 		&saSl,
 		`SELECT id, name, email, picture FROM service_accounts
-		ORDER BY name ASC LIMIT ? OFFSET ?`, lo.PageSize, lo.Page*lo.PageSize,
+		ORDER BY name ASC LIMIT ? OFFSET ?`, lo.Limit(), lo.Offset(),
 	); err != nil {
 		return nil, err
 	}
@@ -70,7 +71,7 @@ func (sas serviceAccounts) List(
 	return saSl, nil
 }
 
-func (sas serviceAccounts) Count() (int64, error) {
+func (sas serviceAccounts) ListCount() (int64, error) {
 	var count int64
 	if _, err := sas.storage.PG.DB.Query(
 		&count,
@@ -82,15 +83,15 @@ func (sas serviceAccounts) Count() (int64, error) {
 }
 
 func (sas serviceAccounts) Search(
-	term string,
+	term string, lo *ListOptions,
 ) ([]models.ServiceAccount, error) {
 	saSl := []models.ServiceAccount{}
 	if _, err := sas.storage.PG.DB.Query(
 		&saSl,
 		`SELECT id, name, email, picture FROM service_accounts
 		WHERE name ILIKE ?0 OR email ILIKE ?0
-		ORDER BY name ASC`,
-		fmt.Sprintf("%%%s%%", term),
+		ORDER BY name ASC LIMIT ?1 OFFSET ?2`,
+		fmt.Sprintf("%%%s%%", term), lo.Limit(), lo.Offset(),
 	); err != nil {
 		return nil, err
 	}
@@ -102,6 +103,18 @@ func (sas serviceAccounts) Search(
 		saSl[i].AuthenticationType = authType
 	}
 	return saSl, nil
+}
+
+func (sas serviceAccounts) SearchCount(term string) (int64, error) {
+	var count int64
+	if _, err := sas.storage.PG.DB.Query(
+		&count,
+		`SELECT count(*) FROM service_accounts
+		WHERE name ILIKE ?0 OR email ILIKE ?0`, fmt.Sprintf("%%%s%%", term),
+	); err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 // ForEmail retrieves Service Account corresponding
