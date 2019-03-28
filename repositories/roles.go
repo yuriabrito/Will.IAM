@@ -15,7 +15,10 @@ type Roles interface {
 	Update(*models.Role) error
 	Bind(*models.RoleBinding) error
 	WithNamePrefix(string, int) ([]models.Role, error)
-	List() ([]models.Role, error)
+	List(*ListOptions) ([]models.Role, error)
+	ListCount() (int64, error)
+	Search(string, *ListOptions) ([]models.Role, error)
+	SearchCount(string) (int64, error)
 	Get(string) (*models.Role, error)
 	DropPermissions(string) error
 	DropBindings(string) error
@@ -101,14 +104,50 @@ func (rs roles) WithNamePrefix(
 	return rsSl, nil
 }
 
-func (rs roles) List() ([]models.Role, error) {
+func (rs roles) List(lo *ListOptions) ([]models.Role, error) {
 	var rsSl []models.Role
 	if _, err := rs.storage.PG.DB.Query(
-		&rsSl, "SELECT id, name FROM roles WHERE is_base_role = false",
+		&rsSl, `SELECT id, name FROM roles WHERE is_base_role = false
+		ORDER BY name ASC LIMIT ? OFFSET ?`, lo.Limit(), lo.Offset(),
 	); err != nil {
 		return nil, err
 	}
 	return rsSl, nil
+}
+
+func (rs roles) ListCount() (int64, error) {
+	var count int64
+	if _, err := rs.storage.PG.DB.Query(
+		&count, `SELECT count(*) FROM roles WHERE is_base_role = false`,
+	); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (rs roles) Search(term string, lo *ListOptions) ([]models.Role, error) {
+	var rsSl []models.Role
+	if _, err := rs.storage.PG.DB.Query(
+		&rsSl, `SELECT id, name FROM roles WHERE name ILIKE ?
+		AND is_base_role = false ORDER BY name ASC LIMIT ? OFFSET ?`,
+		fmt.Sprintf("%%%s%%", term),
+		lo.Limit(), lo.Offset(),
+	); err != nil {
+		return nil, err
+	}
+	return rsSl, nil
+}
+
+func (rs roles) SearchCount(term string) (int64, error) {
+	var count int64
+	if _, err := rs.storage.PG.DB.Query(
+		&count, `SELECT count(*) FROM roles WHERE name ILIKE ?
+		AND is_base_role = false`,
+		fmt.Sprintf("%%%s%%", term),
+	); err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 func (rs roles) Get(id string) (*models.Role, error) {

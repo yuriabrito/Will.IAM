@@ -228,15 +228,21 @@ func (a *App) GetRouter() *mux.Router {
 	).
 		Methods("GET").Name("serviceAccountsListHandler")
 
+	// r.Handle(
+	// 	"/service_accounts/search",
+	// 	authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
+	// 		"ListServiceAccounts", "*",
+	// 	), http.HandlerFunc(
+	// 		serviceAccountsSearchHandler(sasUC),
+	// 	))),
+	// ).
+	// 	Methods("GET").Name("serviceAccountsSearchHandler")
+
 	r.Handle(
 		"/service_accounts/search",
-		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
-			"ListServiceAccounts", "*",
-		), http.HandlerFunc(
-			serviceAccountsSearchHandler(sasUC),
-		))),
+		authMiddle(http.HandlerFunc(serviceAccountsSearchHandler(sasUC))),
 	).
-		Methods("GET").Name("serviceAccountsListHandler")
+		Methods("GET").Name("serviceAccountsSearchHandler")
 
 	r.Handle(
 		"/service_accounts/{id}",
@@ -284,15 +290,37 @@ func (a *App) GetRouter() *mux.Router {
 	).
 		Methods("PUT").Name("rolesUpdateHandler")
 
+	// r.Handle(
+	// 	"/roles",
+	// 	authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
+	// 		"ListRoles", "*",
+	// 	), http.HandlerFunc(
+	// 		rolesListHandler(rsUC),
+	// 	))),
+	// ).
+	// 	Methods("GET").Name("rolesListHandler")
+
+	// r.Handle(
+	// 	"/roles/search",
+	// 	authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
+	// 		"ListRoles", "*",
+	// 	), http.HandlerFunc(
+	// 		rolesSearchHandler(sasUC),
+	// 	))),
+	// ).
+	// Methods("GET").Name("rolesSearchHandler")
+
 	r.Handle(
 		"/roles",
-		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
-			"ListRoles", "*",
-		), http.HandlerFunc(
-			rolesListHandler(rsUC),
-		))),
+		authMiddle(http.HandlerFunc(rolesListHandler(rsUC))),
 	).
 		Methods("GET").Name("rolesListHandler")
+
+	r.Handle(
+		"/roles/search",
+		authMiddle(http.HandlerFunc(rolesSearchHandler(rsUC))),
+	).
+		Methods("GET").Name("rolesSearchHandler")
 
 	r.Handle(
 		"/roles/{id}",

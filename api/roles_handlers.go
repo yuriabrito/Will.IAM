@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -160,19 +161,65 @@ func rolesListHandler(
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		l := middleware.GetLogger(r.Context())
-		rsSl, err := rsUC.WithContext(r.Context()).List()
+		listOptions, err := buildListOptions(r)
+		if err != nil {
+			Write(
+				w, http.StatusUnprocessableEntity,
+				fmt.Sprintf(`{ "error": "%s"  }`, err.Error()),
+			)
+			return
+		}
+		rsSl, count, err := rsUC.WithContext(r.Context()).List(listOptions)
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		bts, err := keepJSONFieldsBytes(rsSl, "id", "name")
+		results, err := keepJSONFields(rsSl, "id", "name")
 		if err != nil {
 			l.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		WriteBytes(w, 200, bts)
+		ret := map[string]interface{}{
+			"count":   count,
+			"results": results,
+		}
+		WriteJSON(w, 200, ret)
+	}
+}
+
+func rolesSearchHandler(
+	rsUC usecases.Roles,
+) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		l := middleware.GetLogger(r.Context())
+		term := r.URL.Query().Get("term")
+		listOptions, err := buildListOptions(r)
+		if err != nil {
+			Write(
+				w, http.StatusUnprocessableEntity,
+				fmt.Sprintf(`{ "error": "%s"  }`, err.Error()),
+			)
+			return
+		}
+		rsSl, count, err := rsUC.WithContext(r.Context()).Search(term, listOptions)
+		if err != nil {
+			l.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		results, err := keepJSONFields(rsSl, "id", "name")
+		if err != nil {
+			l.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		ret := map[string]interface{}{
+			"count":   count,
+			"results": results,
+		}
+		WriteJSON(w, 200, ret)
 	}
 }
 

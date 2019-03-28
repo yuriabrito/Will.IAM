@@ -174,11 +174,7 @@ func serviceAccountsSearchHandler(
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		l := middleware.GetLogger(r.Context())
-		qs := r.URL.Query()
-		term := ""
-		if len(qs["term"]) > 0 {
-			term = qs["term"][0]
-		}
+		term := r.URL.Query().Get("term")
 		listOptions, err := buildListOptions(r)
 		if err != nil {
 			Write(

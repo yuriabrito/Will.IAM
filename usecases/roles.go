@@ -16,7 +16,8 @@ type Roles interface {
 	GetPermissions(string) ([]models.Permission, error)
 	GetServiceAccounts(string) ([]models.ServiceAccount, error)
 	WithNamePrefix(string, int) ([]models.Role, error)
-	List() ([]models.Role, error)
+	List(*repositories.ListOptions) ([]models.Role, int64, error)
+	Search(string, *repositories.ListOptions) ([]models.Role, int64, error)
 	WithContext(context.Context) Roles
 }
 
@@ -125,8 +126,33 @@ func (rs roles) WithNamePrefix(
 	return rs.repo.Roles.WithNamePrefix(prefix, maxResults)
 }
 
-func (rs roles) List() ([]models.Role, error) {
-	return rs.repo.Roles.List()
+func (rs roles) List(
+	lo *repositories.ListOptions,
+) ([]models.Role, int64, error) {
+	rsSl, err := rs.repo.Roles.List(lo)
+	if err != nil {
+		return nil, 0, err
+	}
+	count, err := rs.repo.Roles.ListCount()
+	if err != nil {
+		return nil, 0, err
+	}
+	return rsSl, count, nil
+}
+
+// Search over Roles names
+func (rs roles) Search(
+	term string, lo *repositories.ListOptions,
+) ([]models.Role, int64, error) {
+	rsSl, err := rs.repo.Roles.Search(term, lo)
+	if err != nil {
+		return nil, 0, err
+	}
+	count, err := rs.repo.Roles.SearchCount(term)
+	if err != nil {
+		return nil, 0, err
+	}
+	return rsSl, count, nil
 }
 
 func (rs roles) Get(id string) (map[string]interface{}, error) {

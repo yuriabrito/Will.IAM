@@ -269,7 +269,7 @@ func (sas serviceAccounts) List(
 	return saSl, count, nil
 }
 
-// Search searches over Service Accounts names and emails
+// Search over Service Accounts names and emails
 func (sas serviceAccounts) Search(
 	term string, lo *repositories.ListOptions,
 ) ([]models.ServiceAccount, int64, error) {
