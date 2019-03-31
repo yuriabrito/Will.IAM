@@ -190,7 +190,7 @@ func serviceAccountsSearchHandler(
 			return
 		}
 		results, err := keepJSONFields(
-			saSl, "id", "authenticationType", "name", "email", "picture",
+			saSl, "id", "authenticationType", "name", "email", "picture", "baseRoleId",
 		)
 		if err != nil {
 			l.Error(err)

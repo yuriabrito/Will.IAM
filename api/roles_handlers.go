@@ -71,7 +71,7 @@ func rolesCreateHandler(
 				statusCode = err.(errors.ErrorWithStatusCode).
 					StatusCode()
 			}
-			l.WithError(err).Error("rolesUpdateHandler processRoleWithNestedFromReq")
+			l.WithError(err).Error("rolesCreateHandler processRoleWithNestedFromReq")
 			w.WriteHeader(statusCode)
 			return
 		}

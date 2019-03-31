@@ -56,7 +56,7 @@ func (sas serviceAccounts) List(
 	var saSl []models.ServiceAccount
 	if _, err := sas.storage.PG.DB.Query(
 		&saSl,
-		`SELECT id, name, email, picture FROM service_accounts
+		`SELECT id, name, email, picture, base_role_id FROM service_accounts
 		ORDER BY name ASC LIMIT ? OFFSET ?`, lo.Limit(), lo.Offset(),
 	); err != nil {
 		return nil, err
@@ -88,7 +88,7 @@ func (sas serviceAccounts) Search(
 	saSl := []models.ServiceAccount{}
 	if _, err := sas.storage.PG.DB.Query(
 		&saSl,
-		`SELECT id, name, email, picture FROM service_accounts
+		`SELECT id, name, email, picture, base_role_id FROM service_accounts
 		WHERE name ILIKE ?0 OR email ILIKE ?0
 		ORDER BY name ASC LIMIT ?1 OFFSET ?2`,
 		fmt.Sprintf("%%%s%%", term), lo.Limit(), lo.Offset(),

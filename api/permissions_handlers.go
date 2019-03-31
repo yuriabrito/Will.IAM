@@ -93,6 +93,58 @@ func permissionsCreatePermissionRequestHandler(
 	}
 }
 
+func permissionsAttributeHandler(
+	sasUC usecases.ServiceAccounts, psUC usecases.Permissions,
+) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		l := middleware.GetLogger(r.Context())
+		body, err := ioutil.ReadAll(r.Body)
+		defer r.Body.Close()
+		if err != nil {
+			l.WithError(err).Error("ioutil.ReadAll failed")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		pa := &usecases.PermissionsAttribute{}
+		err = json.Unmarshal(body, pa)
+		if err != nil {
+			l.WithError(err).Error("json.Unmarshal failed")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		pa.Permissions, err = models.BuildPermissions(pa.PermissionsStrings)
+		if err != nil {
+			l.WithError(err).Error("BuildPermissions failed")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		for i := range pa.PermissionsStrings {
+			if alias, ok := pa.PermissionsAliases[pa.PermissionsStrings[i]]; ok {
+				pa.Permissions[i].Alias = alias
+			}
+		}
+		saID, _ := getServiceAccountID(r.Context())
+		has, err := sasUC.WithContext(r.Context()).
+			HasAllOwnerPermissions(saID, pa.Permissions)
+		if err != nil {
+			l.WithError(err).Error("HasAllOwnerPermissions failed")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if !has {
+			l.Infof("saID %s doesn't own all permissions")
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		err = psUC.WithContext(r.Context()).Attribute(pa)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
 func permissionsGetPermissionRequestsHandler(
 	sasUC usecases.ServiceAccounts, psUC usecases.Permissions,
 ) func(http.ResponseWriter, *http.Request) {

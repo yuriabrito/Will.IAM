@@ -359,6 +359,14 @@ func (a *App) GetRouter() *mux.Router {
 		Methods("GET").Name("permissionsGetPermissionRequestsHandler")
 
 	r.Handle(
+		"/permissions/attribute",
+		authMiddle(http.HandlerFunc(
+			permissionsAttributeHandler(sasUC, psUC),
+		)),
+	).
+		Methods("PUT").Name("permissionsAttributeHandler")
+
+	r.Handle(
 		"/permissions/has",
 		authMiddle(http.HandlerFunc(
 			permissionsHasHandler(sasUC),

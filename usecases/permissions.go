@@ -14,7 +14,16 @@ type Permissions interface {
 	Create(*models.Permission) error
 	CreateRequest(string, *models.PermissionRequest) error
 	GetPermissionRequests(string) ([]models.PermissionRequest, error)
+	Attribute(*PermissionsAttribute) error
 	WithContext(context.Context) Permissions
+}
+
+// PermissionsAttribute are used in PUT /permissions/attribute
+type PermissionsAttribute struct {
+	RolesIDs           []string            `json:"rolesIds"`
+	PermissionsStrings []string            `json:"permissions"`
+	PermissionsAliases map[string]string   `json:"permissionsAliases"`
+	Permissions        []models.Permission `json:"-"`
 }
 
 type permissions struct {
@@ -49,6 +58,20 @@ func (ps permissions) GetPermissionRequests(
 	saID string,
 ) ([]models.PermissionRequest, error) {
 	return ps.repo.Permissions.GetPermissionRequests(saID)
+}
+
+func (ps permissions) Attribute(pa *PermissionsAttribute) error {
+	return ps.repo.WithPGTx(ps.ctx, func(repo *repositories.All) error {
+		for _, roleID := range pa.RolesIDs {
+			for _, permission := range pa.Permissions {
+				permission.RoleID = roleID
+				if err := repo.Permissions.Create(&permission); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	})
 }
 
 // NewPermissions ctor
