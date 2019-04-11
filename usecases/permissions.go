@@ -15,12 +15,21 @@ type Permissions interface {
 	CreateRequest(string, *models.PermissionRequest) error
 	GetPermissionRequests(string) ([]models.PermissionRequest, error)
 	Attribute(*PermissionsAttribute) error
+	AttributeToEmails(*PermissionsAttributeToEmails) error
 	WithContext(context.Context) Permissions
 }
 
 // PermissionsAttribute are used in PUT /permissions/attribute
 type PermissionsAttribute struct {
 	RolesIDs           []string            `json:"rolesIds"`
+	PermissionsStrings []string            `json:"permissions"`
+	PermissionsAliases map[string]string   `json:"permissionsAliases"`
+	Permissions        []models.Permission `json:"-"`
+}
+
+// PermissionsAttributeToEmails are used in PUT /permissions/attribute_to_emails
+type PermissionsAttributeToEmails struct {
+	Emails             []string            `json:"emails"`
 	PermissionsStrings []string            `json:"permissions"`
 	PermissionsAliases map[string]string   `json:"permissionsAliases"`
 	Permissions        []models.Permission `json:"-"`
@@ -65,6 +74,24 @@ func (ps permissions) Attribute(pa *PermissionsAttribute) error {
 		for _, roleID := range pa.RolesIDs {
 			for _, permission := range pa.Permissions {
 				permission.RoleID = roleID
+				if err := repo.Permissions.Create(&permission); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	})
+}
+
+func (ps permissions) AttributeToEmails(pa *PermissionsAttributeToEmails) error {
+	sas, err := ps.repo.ServiceAccounts.ForEmails(pa.Emails)
+	if err != nil {
+		return err
+	}
+	return ps.repo.WithPGTx(ps.ctx, func(repo *repositories.All) error {
+		for _, sa := range sas {
+			for _, permission := range pa.Permissions {
+				permission.RoleID = sa.BaseRoleID
 				if err := repo.Permissions.Create(&permission); err != nil {
 					return err
 				}

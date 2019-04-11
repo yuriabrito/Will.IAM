@@ -35,7 +35,6 @@ func New(s *Storage) *All {
 func (a *All) WithContext(ctx context.Context) *All {
 	s := a.storage.Clone()
 	s.PG.DB = pg.WithContext(ctx, s.PG.DB)
-	s.Redis.Client = s.Redis.Trace(ctx)
 	return a.cloneWithStorage(s)
 }
 
@@ -48,7 +47,6 @@ func (a *All) WithPGTx(ctx context.Context, fn func(repo *All) error) error {
 		return err
 	}
 	s.PG.DB = tx
-	s.Redis.Client = s.Redis.Trace(ctx)
 	c := a.cloneWithStorage(s)
 
 	defer pg.Rollback(c.storage.PG.DB)

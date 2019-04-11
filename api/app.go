@@ -64,9 +64,6 @@ func (a *App) configureApp() error {
 	if err := a.configurePG(); err != nil {
 		return err
 	}
-	if err := a.configureRedis(); err != nil {
-		return err
-	}
 
 	a.configureGoogleOAuth2Provider()
 	a.configureServer()
@@ -95,13 +92,6 @@ func (a *App) configurePG() error {
 		return nil
 	}
 	return a.storage.ConfigurePG(a.config)
-}
-
-func (a *App) configureRedis() error {
-	if a.storage != nil && a.storage.Redis != nil {
-		return nil
-	}
-	return a.storage.ConfigureRedis(a.config)
 }
 
 func (a *App) configureJaeger() error {
@@ -212,31 +202,11 @@ func (a *App) GetRouter() *mux.Router {
 	).
 		Methods("PUT").Name("servicesUpdateHandler")
 
-	// r.Handle(
-	// 	"/service_accounts",
-	// 	authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
-	// 		"ListServiceAccounts", "*",
-	// 	), http.HandlerFunc(
-	// 		serviceAccountsListHandler(sasUC),
-	// 	))),
-	// ).
-	// 	Methods("GET").Name("serviceAccountsListHandler")
-
 	r.Handle(
 		"/service_accounts",
 		authMiddle(http.HandlerFunc(serviceAccountsListHandler(sasUC))),
 	).
 		Methods("GET").Name("serviceAccountsListHandler")
-
-	// r.Handle(
-	// 	"/service_accounts/search",
-	// 	authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
-	// 		"ListServiceAccounts", "*",
-	// 	), http.HandlerFunc(
-	// 		serviceAccountsSearchHandler(sasUC),
-	// 	))),
-	// ).
-	// 	Methods("GET").Name("serviceAccountsSearchHandler")
 
 	r.Handle(
 		"/service_accounts/search",
@@ -290,26 +260,6 @@ func (a *App) GetRouter() *mux.Router {
 	).
 		Methods("PUT").Name("rolesUpdateHandler")
 
-	// r.Handle(
-	// 	"/roles",
-	// 	authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
-	// 		"ListRoles", "*",
-	// 	), http.HandlerFunc(
-	// 		rolesListHandler(rsUC),
-	// 	))),
-	// ).
-	// 	Methods("GET").Name("rolesListHandler")
-
-	// r.Handle(
-	// 	"/roles/search",
-	// 	authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
-	// 		"ListRoles", "*",
-	// 	), http.HandlerFunc(
-	// 		rolesSearchHandler(sasUC),
-	// 	))),
-	// ).
-	// Methods("GET").Name("rolesSearchHandler")
-
 	r.Handle(
 		"/roles",
 		authMiddle(http.HandlerFunc(rolesListHandler(rsUC))),
@@ -325,7 +275,7 @@ func (a *App) GetRouter() *mux.Router {
 	r.Handle(
 		"/roles/{id}",
 		authMiddle(hasPermissionMiddle(models.BuildWillIAMPermissionLender(
-			"ViewRole", "{id}",
+			"EditRole", "{id}",
 		), http.HandlerFunc(
 			rolesGetHandler(rsUC),
 		))),
@@ -362,6 +312,14 @@ func (a *App) GetRouter() *mux.Router {
 		"/permissions/attribute",
 		authMiddle(http.HandlerFunc(
 			permissionsAttributeHandler(sasUC, psUC),
+		)),
+	).
+		Methods("PUT").Name("permissionsAttributeHandler")
+
+	r.Handle(
+		"/permissions/attribute_to_emails",
+		authMiddle(http.HandlerFunc(
+			permissionsAttributeToEmailsHandler(sasUC, psUC),
 		)),
 	).
 		Methods("PUT").Name("permissionsAttributeHandler")

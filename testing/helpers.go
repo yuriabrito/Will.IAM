@@ -64,9 +64,6 @@ func GetStorage(t *testing.T) *repositories.Storage {
 	if err := s.ConfigurePG(GetConfig(t)); err != nil {
 		panic(err)
 	}
-	if err := s.ConfigureRedis(GetConfig(t)); err != nil {
-		panic(err)
-	}
 	return s
 }
 

@@ -28,13 +28,13 @@ setup-migrate:
 	@mv migrate.$(platform)-amd64 /usr/local/bin/migrate
 
 deps:
-	@mkdir -p docker_data && docker-compose up -d postgres redis
+	@mkdir -p docker_data && docker-compose up -d postgres
 	@until docker exec $(pg_dep) pg_isready; do echo 'Waiting Postgres...' && sleep 1; done
 	@docker exec $(pg_dep) createuser -s -U postgres $(project) 2>/dev/null || true
 	@docker exec $(pg_dep) createdb -U $(project) $(project) 2>/dev/null || true
 
 deps-test:
-	@mkdir -p docker_data && docker-compose up -d postgres redis
+	@mkdir -p docker_data && docker-compose up -d postgres
 	@until docker exec $(pg_dep) pg_isready; do echo 'Waiting Postgres...' && sleep 1; done
 	@docker exec $(pg_dep) createuser -s -U postgres $(project) 2>/dev/null || true
 	@docker exec $(pg_dep) createdb -U $(project) $(project_test) 2>/dev/null || true
@@ -74,10 +74,10 @@ test:
 	@make stop-deps-test
 
 test-fast:
-	@make drop-test
 	@make migrate-test
 	@make unit
 	@make integration
+	@make drop-test
 
 unit:
 	@echo "Unit Tests"

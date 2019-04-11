@@ -15,6 +15,7 @@ type ServiceAccounts interface {
 	Search(string, *ListOptions) ([]models.ServiceAccount, error)
 	SearchCount(string) (int64, error)
 	ForEmail(string) (*models.ServiceAccount, error)
+	ForEmails([]string) ([]models.ServiceAccount, error)
 	ForKeyPair(string, string) (*models.ServiceAccount, error)
 	Create(*models.ServiceAccount) error
 	Update(*models.ServiceAccount) error
@@ -124,7 +125,7 @@ func (sas serviceAccounts) ForEmail(
 	sa := new(models.ServiceAccount)
 	if _, err := sas.storage.PG.DB.Query(
 		sa, `SELECT id, name, key_id, key_secret, email, base_role_id, picture
-		FROM service_accounts WHERE email = ? LIMIT 1`, email,
+		FROM service_accounts WHERE email = ?`, email,
 	); err != nil {
 		return nil, err
 	}
@@ -132,6 +133,20 @@ func (sas serviceAccounts) ForEmail(
 		return nil, errors.NewEntityNotFoundError(models.ServiceAccount{}, email)
 	}
 	return sa, nil
+}
+
+// ForEmails retrieves Service Account corresponding
+func (sas serviceAccounts) ForEmails(
+	emails []string,
+) ([]models.ServiceAccount, error) {
+	saSl := []models.ServiceAccount{}
+	if _, err := sas.storage.PG.DB.Query(
+		&saSl, `SELECT id, name, key_id, key_secret, email, base_role_id, picture
+		FROM service_accounts WHERE email = ANY(?)`, emails,
+	); err != nil {
+		return nil, err
+	}
+	return saSl, nil
 }
 
 // ForKeyPair retrieves Service Account corresponding
