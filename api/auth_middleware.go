@@ -71,6 +71,7 @@ func authMiddleware(
 			} else {
 				l.WithError(errors.NewInvalidAuthorizationTypeError()).Error("auth failed")
 				w.WriteHeader(http.StatusUnauthorized)
+				return
 			}
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
