@@ -65,7 +65,8 @@ func (ps *permissions) ForServiceAccount(
 		&permissions, `SELECT p.id, p.role_id, p.service, p.ownership_level,
 p.action, p.resource_hierarchy, p.alias FROM permissions p
 	JOIN role_bindings rb ON rb.role_id = p.role_id
-	WHERE rb.service_account_id = ?`, saID,
+	WHERE rb.service_account_id = ?
+	ORDER BY p.service, p.ownership_level, p.action, p.resource_hierarchy`, saID,
 	); err != nil {
 		return nil, err
 	}
@@ -79,7 +80,8 @@ func (ps *permissions) ForRole(
 	if _, err := ps.storage.PG.DB.Query(
 		&permissions, `SELECT id, role_id, service, ownership_level,
 action, resource_hierarchy, alias FROM permissions
-	WHERE role_id = ?`, roleID,
+	WHERE role_id = ?
+	ORDER BY service, ownership_level, action, resource_hierarchy`, roleID,
 	); err != nil {
 		return nil, err
 	}
