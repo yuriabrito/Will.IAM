@@ -5,6 +5,7 @@ import (
 
 	"github.com/ghostec/Will.IAM/errors"
 	"github.com/ghostec/Will.IAM/models"
+	"github.com/go-pg/pg"
 )
 
 // ServiceAccounts repository
@@ -142,7 +143,7 @@ func (sas serviceAccounts) ForEmails(
 	saSl := []models.ServiceAccount{}
 	if _, err := sas.storage.PG.DB.Query(
 		&saSl, `SELECT id, name, key_id, key_secret, email, base_role_id, picture
-		FROM service_accounts WHERE email = ANY(?)`, emails,
+		FROM service_accounts WHERE email = ANY(?)`, pg.Array(emails),
 	); err != nil {
 		return nil, err
 	}

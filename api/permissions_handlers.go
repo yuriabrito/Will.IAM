@@ -190,6 +190,7 @@ func permissionsAttributeToEmailsHandler(
 		}
 		err = psUC.WithContext(r.Context()).AttributeToEmails(pa)
 		if err != nil {
+			l.WithError(err).Error("AttributeToEmails failed")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
