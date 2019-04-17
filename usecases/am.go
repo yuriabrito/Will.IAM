@@ -41,6 +41,7 @@ func (a am) List(saID string, prefix string) ([]models.AM, error) {
 	if err != nil {
 		return nil, err
 	}
+	ams = a.maybeAddStarPermissions(prefix, ams)
 	ps := []models.Permission{}
 	is := []int{}
 	for i := range ams {
@@ -63,6 +64,25 @@ func (a am) List(saID string, prefix string) ([]models.AM, error) {
 		ams[is[i]].Owner = hasSl[2*i+1]
 	}
 	return ams, nil
+}
+
+func (a am) maybeAddStarPermissions(
+	prefix string, ams []models.AM,
+) []models.AM {
+	parts := strings.Split(prefix, "::")
+	if !strings.HasSuffix(prefix, "::") || len(parts) > 3 {
+		return ams
+	}
+	for i := range ams {
+		if strings.HasSuffix(ams[i].Prefix, "::*") {
+			return ams
+		}
+	}
+	star := models.AM{
+		Prefix:   fmt.Sprintf("%s*", prefix),
+		Complete: len(parts) >= 3,
+	}
+	return append([]models.AM{star}, ams...)
 }
 
 func buildLenderAndOwnerPermissions(
@@ -152,11 +172,7 @@ func (a am) listWillIAMPermissions(prefix string) ([]models.AM, error) {
 	for i := range ams {
 		ams[i].Prefix = fmt.Sprintf("%s::%s::%s", parts[0], parts[1], ams[i].Prefix)
 	}
-	return append(
-		[]models.AM{models.AM{
-			Prefix: fmt.Sprintf("%s::%s::*", parts[0], parts[1]), Complete: true,
-		}}, ams...,
-	), nil
+	return ams, nil
 }
 
 func (a am) listWillIAMActions(prefix string) ([]string, error) {
